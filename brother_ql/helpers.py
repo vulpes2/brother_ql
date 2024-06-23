@@ -24,7 +24,7 @@ class ElementsManager(object):
         if element not in self._elements:
             if pos == -1:
                 pos = len(self._labels)
-            self._labels.insert(len(self._labels), label)
+            self._labels.insert(len(self._labels), element)
         else:
             logger.warn(
                 "Won't register %s as it's already present: %s",
@@ -39,7 +39,7 @@ class ElementsManager(object):
             logger.warn(
                 "Trying to deregister a %s that's not registered currently: %s",
                 self.ELEMENT_NAME,
-                label,
+                element,
             )
 
     def iter_identifiers(self):
