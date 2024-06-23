@@ -1,6 +1,6 @@
 [project]
 name = "brother_ql-inventree"
-version = "1.2a1"
+version = "1.2"
 description = "Python package to talk to Brother QL label printers"
 readme = "README.md"
 authors = [
