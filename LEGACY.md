@@ -21,12 +21,12 @@ giving:
                              [--dither] [--compress] [--red] [--600dpi] [--no-cut]
                              [--loglevel LOGLEVEL]
                              image [outfile]
-    
+
     positional arguments:
       image                 The image file to create a label from.
       outfile               The file to write the instructions to. Defaults to
                             stdout.
-    
+
     optional arguments:
       -h, --help            show this help message and exit
       --model MODEL, -m MODEL
@@ -119,17 +119,17 @@ You can use the supplied tool `brother_ql_debug` to send your problematic instru
 After every instruction, the printer will be given a chance to send a status response containing error information. Here is an example:
 
     philipp@lion ~> brother_ql_debug ./720x151_monochrome.bin /dev/usb/lp0
-    INFO: CMD preamble FOUND. Instruction: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 [...] 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-    INFO: CMD init FOUND. Instruction: 1B 40 
-    INFO: CMD status request FOUND. Instruction: 1B 69 53 
+    INFO: CMD preamble FOUND. Instruction: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 [...] 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+    INFO: CMD init FOUND. Instruction: 1B 40
+    INFO: CMD status request FOUND. Instruction: 1B 69 53
     INFO: Response from the device: 80 20 42 30 4F 30 00 00 00 00 3E 0A 00 00 15 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
     INFO: Interpretation of the response: 'Reply to status request' (phase: Waiting to receive), 'Continuous length tape' 62x0 mm^2, errors: []
-    INFO: CMD media/quality FOUND. Instruction: 1B 69 7A CE 0A 3E 00 97 00 00 00 01 00 
-    INFO: CMD margins FOUND. Instruction: 1B 69 64 23 00 
-    INFO: CMD raster FOUND. Instruction: 67 00 5A 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 FF FF FF 1F FF FF FF FF FF F0 00 00 00 00 00 0F FF FF 03 FF FF FF FF E0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 [...] 00 07 FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+    INFO: CMD media/quality FOUND. Instruction: 1B 69 7A CE 0A 3E 00 97 00 00 00 01 00
+    INFO: CMD margins FOUND. Instruction: 1B 69 64 23 00
+    INFO: CMD raster FOUND. Instruction: 67 00 5A 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 FF FF FF 1F FF FF FF FF FF F0 00 00 00 00 00 0F FF FF 03 FF FF FF FF E0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 [...] 00 07 FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
     INFO: Response from the device: 80 20 42 30 4F 30 00 00 00 00 3E 0A 00 00 15 00 00 00 06 01 00 00 00 00 00 00 00 00 00 00 00 00
     INFO: Interpretation of the response: 'Phase change' (phase: Printing state), 'Continuous length tape' 62x0 mm^2, errors: []
-    INFO: CMD print FOUND. Instruction: 1A 
+    INFO: CMD print FOUND. Instruction: 1A
     TIME 1.60
     INFO: Interpretation of the response: 'Printing completed' (phase: Printing state), 'Continuous length tape' 62x0 mm^2, errors: []
     TIME 1.60
@@ -139,4 +139,3 @@ Here, a command file was successfully printed. The last response should state th
 If you want to confirm the sending of every single command individually, you can add the `--interactive` argument to the command line call.
 
 If you're seeing any error there, open a new issue on Github containing the debugging output to get your device supported.
-
