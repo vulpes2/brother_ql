@@ -160,7 +160,20 @@ def analyze_cmd(ctx, *args, **kwargs):
 @click.pass_context
 def send_cmd(ctx, *args, **kwargs):
     from brother_ql.backends.helpers import send
+
     send(instructions=kwargs['instructions'].read(), printer_identifier=ctx.meta.get('PRINTER'), backend_identifier=ctx.meta.get('BACKEND'), blocking=True)
+
+
+@cli.command(name="status", short_help="query printer status and the loaded media size")
+@click.pass_context
+def status_cmd(ctx, *args, **kwargs):
+    from brother_ql.backends.helpers import status
+
+    status(
+        printer_identifier=ctx.meta.get("PRINTER"),
+        backend_identifier=ctx.meta.get("BACKEND"),
+    )
+
 
 if __name__ == '__main__':
     cli()
