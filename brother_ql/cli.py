@@ -2,12 +2,15 @@
 
 # Python standard library
 import logging
+import os
+from urllib.parse import urlparse
 
 # external dependencies
 import click
 
 # imports from this very package
 from brother_ql.devicedependent import models, label_sizes, label_type_specs, DIE_CUT_LABEL, ENDLESS_LABEL, ROUND_DIE_CUT_LABEL
+from brother_ql.models import ModelsManager
 from brother_ql.backends import available_backends, backend_factory
 
 
@@ -41,16 +44,50 @@ def cli(ctx, *args, **kwargs):
 @cli.command()
 @click.pass_context
 def discover(ctx):
-    """ find connected label printers """
-    backend = ctx.meta.get('BACKEND', 'pyusb')
-    discover_and_list_available_devices(backend)
+    """find connected label printers"""
+    backend = ctx.meta.get("BACKEND", "pyusb")
+    if backend is None:
+        logger.info("Defaulting to pyusb as backend for discovery")
+        backend = "pyusb"
+    from brother_ql.backends.helpers import discover, status
 
-def discover_and_list_available_devices(backend):
-    from brother_ql.backends.helpers import discover
     available_devices = discover(backend_identifier=backend)
-    from brother_ql.output_helpers import log_discovered_devices, textual_description_discovered_devices
-    log_discovered_devices(available_devices)
-    print(textual_description_discovered_devices(available_devices))
+    for device in available_devices:
+        device_status = None
+        result = {"model": "unknown"}
+
+        # skip network discovery since it's not supported
+        if backend == "pyusb" or backend == "linux_kernel":
+            logger.info(f"Probing device at {device["identifier"]}")
+
+            # check permissions before accessing lp* devices
+            if backend == "linux_kernel":
+                url = urlparse(device["identifier"])
+                if not os.access(url.path, os.W_OK):
+                    logger.info(
+                        f"Cannot access device {device["identifier"]} due to insufficient permissions"
+                    )
+                    continue
+
+            # send status request
+            device_status = status(
+                printer_identifier=device["identifier"],
+                backend_identifier=backend,
+            )
+
+            # look up series code and model code
+            for m in ModelsManager().iter_elements():
+                if (
+                    device_status["series_code"] == m.series_code
+                    and device_status["model_code"] == m.model_code
+                ):
+                    result = {"model": m.identifier}
+                    break
+
+        result.update(device)
+        logger.info(
+            "Found a label printer at: {identifier} (model: {model})".format(**result),
+        )
 
 @cli.group()
 @click.pass_context
