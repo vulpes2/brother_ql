@@ -170,7 +170,19 @@ ALL_MODELS = [
         identifier="PT-E550W", min_max_length_dots=(31, 14172), number_bytes_per_row=16
     ),
     Model(
-        identifier="PT-P750W", min_max_length_dots=(31, 14172), number_bytes_per_row=16
+        identifier="PT-P700",
+        min_max_length_dots=(31, 14172),
+        number_bytes_per_row=16,
+        series_code=0x30,
+        model_code=0x67,
+        product_id=0x2061,
+    ),
+    Model(
+        identifier="PT-P750W",
+        min_max_length_dots=(31, 14172),
+        number_bytes_per_row=16,
+        series_code=0x30,
+        model_code=0x68,
     ),
     Model(
         identifier="PT-P900W", min_max_length_dots=(57, 28346), number_bytes_per_row=70
