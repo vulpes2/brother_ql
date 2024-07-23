@@ -9,10 +9,8 @@ from brother_ql.backends import backend_factory, guess_backend
 logger = logging.getLogger(__name__)
 
 class BrotherQL_USBdebug(object):
-
-    def __init__(self, dev, instructions_data, backend='linux_kernel'):
-
-        be_cls = backend_factory(backend)['backend_class']
+    def __init__(self, dev, instructions_data, backend="pyusb"):
+        be_cls = backend_factory(backend)["backend_class"]
         self.be = be_cls(dev)
 
         self.sleep_time = 0.0

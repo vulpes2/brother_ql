@@ -14,14 +14,13 @@ from brother_ql.reader import interpret_response
 
 logger = logging.getLogger(__name__)
 
-def discover(backend_identifier='linux_kernel'):
-
+def discover(backend_identifier="pyusb"):
+    if backend_identifier is None:
+        logger.info("Backend for discovery not specified, defaulting to pyusb")
+        backend_identifier = "pyusb"
     be = backend_factory(backend_identifier)
-    list_available_devices = be['list_available_devices']
-    BrotherQLBackend       = be['backend_class']
-
-    available_devices = list_available_devices()
-    return available_devices
+    list_available_devices = be["list_available_devices"]
+    return list_available_devices()
 
 def send(instructions, printer_identifier=None, backend_identifier=None, blocking=True):
     """
@@ -47,8 +46,8 @@ def send(instructions, printer_identifier=None, backend_identifier=None, blockin
         try:
             selected_backend = guess_backend(printer_identifier)
         except:
-            logger.info("No backend stated. Selecting the default linux_kernel backend.")
-            selected_backend = 'linux_kernel'
+            logger.info("No backend stated. Selecting the default pyusb backend.")
+            selected_backend = "pyusb"
 
     be = backend_factory(selected_backend)
     list_available_devices = be['list_available_devices']
@@ -121,10 +120,8 @@ def status(
         try:
             selected_backend = guess_backend(printer_identifier)
         except ValueError:
-            logger.info(
-                "No backend stated. Selecting the default linux_kernel backend."
-            )
-            selected_backend = "linux_kernel"
+            logger.info("No backend stated. Selecting the default pyusb backend.")
+            selected_backend = "pyusb"
     if selected_backend == "network":
         # Not implemented due to lack of an available test device
         raise NotImplementedError

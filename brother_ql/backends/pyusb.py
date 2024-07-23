@@ -21,7 +21,7 @@ def list_available_devices():
 
     returns: devices: a list of dictionaries with the keys 'identifier' and 'instance': \
         [ {'identifier': 'usb://0x04f9:0x2015/C5Z315686', 'instance': pyusb.core.Device()}, ]
-        The 'identifier' is of the format idVendor:idProduct_iSerialNumber.
+        The 'identifier' is of the format idVendor:idProduct/iSerialNumber.
     """
 
     class find_class(object):
