@@ -11,6 +11,7 @@ class Model(object):
     This class represents a printer model. All specifics of a certain model
     and the opcodes it supports should be contained in this class.
     """
+
     #: A string identifier given to each model implemented. Eg. 'QL-500'.
     identifier = attrib(type=str)
     #: Minimum and maximum number of rows or 'dots' that can be printed.
@@ -92,7 +93,13 @@ ALL_MODELS = [
         model_code=0x33,
         product_id=0x2029,
     ),
-    Model(identifier="QL-600", min_max_length_dots=(150, 11811)),
+    Model(
+        identifier="QL-600",
+        min_max_length_dots=(150, 11811),
+        series_code=0x34,
+        model_code=0x47,
+        product_id=0x20C0,
+    ),
     Model(
         identifier="QL-650TD",
         min_max_length_dots=(295, 11811),
@@ -109,26 +116,47 @@ ALL_MODELS = [
         model_code=0x35,
         product_id=0x2042,
     ),
-    Model(identifier="QL-710W", min_max_length_dots=(150, 11811)),
-    Model(identifier="QL-720NW", min_max_length_dots=(150, 11811)),
+    Model(
+        identifier="QL-710W",
+        min_max_length_dots=(150, 11811),
+        series_code=0x34,
+        model_code=0x36,
+        product_id=0x2043,
+    ),
+    Model(
+        identifier="QL-720NW",
+        min_max_length_dots=(150, 11811),
+        series_code=0x34,
+        model_code=0x37,
+        product_id=0x2044,
+    ),
     Model(
         identifier="QL-800",
         min_max_length_dots=(150, 11811),
         two_color=True,
         compression=False,
         num_invalidate_bytes=400,
+        series_code=0x34,
+        model_code=0x38,
+        product_id=0x209B,
     ),
     Model(
         identifier="QL-810W",
         min_max_length_dots=(150, 11811),
         two_color=True,
         num_invalidate_bytes=400,
+        series_code=0x34,
+        model_code=0x39,
+        product_id=0x209C,
     ),
     Model(
         identifier="QL-820NWB",
         min_max_length_dots=(150, 11811),
         two_color=True,
         num_invalidate_bytes=400,
+        series_code=0x34,
+        model_code=0x41,
+        product_id=0x209D,
     ),
     Model(
         identifier="QL-1050",
@@ -153,21 +181,35 @@ ALL_MODELS = [
         min_max_length_dots=(301, 35434),
         number_bytes_per_row=162,
         additional_offset_r=44,
+        series_code=0x34,
+        model_code=0x43,
+        product_id=0x20A7,
     ),
     Model(
         identifier="QL-1110NWB",
         min_max_length_dots=(301, 35434),
         number_bytes_per_row=162,
         additional_offset_r=44,
+        series_code=0x34,
+        model_code=0x44,
+        product_id=0x20A8,
     ),
     Model(
         identifier="QL-1115NWB",
         min_max_length_dots=(301, 35434),
         number_bytes_per_row=162,
         additional_offset_r=44,
+        series_code=0x34,
+        model_code=0x45,
+        product_id=0x20AB,
     ),
     Model(
-        identifier="PT-E550W", min_max_length_dots=(31, 14172), number_bytes_per_row=16
+        identifier="PT-E550W",
+        min_max_length_dots=(31, 14172),
+        number_bytes_per_row=16,
+        series_code=0x30,
+        model_code=0x68,
+        product_id=0x2060,
     ),
     Model(
         identifier="PT-P700",
@@ -183,12 +225,23 @@ ALL_MODELS = [
         number_bytes_per_row=16,
         series_code=0x30,
         model_code=0x68,
+        product_id=0x2062,
     ),
     Model(
-        identifier="PT-P900W", min_max_length_dots=(57, 28346), number_bytes_per_row=70
+        identifier="PT-P900W",
+        min_max_length_dots=(57, 28346),
+        number_bytes_per_row=70,
+        series_code=0x30,
+        model_code=0x69,
+        product_id=0x2085,
     ),
     Model(
-        identifier="PT-P950NW", min_max_length_dots=(57, 28346), number_bytes_per_row=70
+        identifier="PT-P950NW",
+        min_max_length_dots=(57, 28346),
+        number_bytes_per_row=70,
+        series_code=0x30,
+        model_code=0x70,
+        product_id=0x2086,
     ),
 ]
 
