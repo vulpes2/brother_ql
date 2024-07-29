@@ -24,6 +24,11 @@ def textual_label_description(labels_to_include):
         output += fmt.format(label_size=label_size, dots_printable=dots_printable, label_descr=label_descr)
     return output
 
+def log_discovered_devices(available_devices, level=logging.INFO):
+    for ad in available_devices:
+        result = {'model': 'unknown'}
+        result.update(ad)
+        logger.log(level, "  Found a label printer: {identifier}  (model: {model})".format(**result))
 
 def textual_description_discovered_devices(available_devices):
     output = ""

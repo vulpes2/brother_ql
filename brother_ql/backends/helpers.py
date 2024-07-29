@@ -19,8 +19,10 @@ def discover(backend_identifier="pyusb"):
         logger.info("Backend for discovery not specified, defaulting to pyusb")
         backend_identifier = "pyusb"
     be = backend_factory(backend_identifier)
-    list_available_devices = be["list_available_devices"]
-    return list_available_devices()
+    list_available_devices = be['list_available_devices']
+    BrotherQLBackend       = be['backend_class']
+    available_devices = list_available_devices()
+    return available_devices
 
 def send(instructions, printer_identifier=None, backend_identifier=None, blocking=True):
     """

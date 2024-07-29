@@ -89,6 +89,13 @@ def discover(ctx):
             "Found a label printer at: {identifier} (model: {model})".format(**result),
         )
 
+def discover_and_list_available_devices(backend):
+    from brother_ql.backends.helpers import discover
+    available_devices = discover(backend_identifier=backend)
+    from brother_ql.output_helpers import log_discovered_devices, textual_description_discovered_devices
+    log_discovered_devices(available_devices)
+    print(textual_description_discovered_devices(available_devices))
+
 @cli.group()
 @click.pass_context
 def info(ctx, *args, **kwargs):
@@ -197,7 +204,6 @@ def analyze_cmd(ctx, *args, **kwargs):
 @click.pass_context
 def send_cmd(ctx, *args, **kwargs):
     from brother_ql.backends.helpers import send
-
     send(instructions=kwargs['instructions'].read(), printer_identifier=ctx.meta.get('PRINTER'), backend_identifier=ctx.meta.get('BACKEND'), blocking=True)
 
 
