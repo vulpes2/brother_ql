@@ -44,10 +44,10 @@ def cli(ctx, *args, **kwargs):
 @cli.command()
 @click.pass_context
 def discover(ctx):
-    """find connected label printers"""
-    backend = ctx.meta.get("BACKEND", "pyusb")
+    """ find connected label printers """
+    backend = ctx.meta.get('BACKEND', 'pyusb')
     if backend is None:
-        logger.info("Defaulting to pyusb as backend for discovery")
+        logger.info("Defaulting to pyusb as backend for discovery.")
         backend = "pyusb"
     from brother_ql.backends.helpers import discover, status
 
@@ -65,7 +65,7 @@ def discover(ctx):
                 url = urlparse(device["identifier"])
                 if not os.access(url.path, os.W_OK):
                     logger.info(
-                        f"Cannot access device {device["identifier"]} due to insufficient permissions"
+                        f"Cannot access device {device["identifier"]} due to insufficient permissions. You need to be a part of the lp group to access printers with this backend."
                     )
                     continue
 

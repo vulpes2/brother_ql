@@ -14,10 +14,10 @@ from brother_ql.reader import interpret_response
 
 logger = logging.getLogger(__name__)
 
-def discover(backend_identifier="pyusb"):
+def discover(backend_identifier='linux_kernel'):
     if backend_identifier is None:
-        logger.info("Backend for discovery not specified, defaulting to pyusb")
-        backend_identifier = "pyusb"
+        logger.info("Backend for discovery not specified, defaulting to linux_kernel.")
+        backend_identifier = "linux_kernel"
     be = backend_factory(backend_identifier)
     list_available_devices = be['list_available_devices']
     BrotherQLBackend       = be['backend_class']
@@ -48,8 +48,8 @@ def send(instructions, printer_identifier=None, backend_identifier=None, blockin
         try:
             selected_backend = guess_backend(printer_identifier)
         except:
-            logger.info("No backend stated. Selecting the default pyusb backend.")
-            selected_backend = "pyusb"
+            logger.info("No backend stated. Selecting the default linux_kernel backend.")
+            selected_backend = 'linux_kernel'
 
     be = backend_factory(selected_backend)
     list_available_devices = be['list_available_devices']
@@ -122,8 +122,8 @@ def status(
         try:
             selected_backend = guess_backend(printer_identifier)
         except ValueError:
-            logger.info("No backend stated. Selecting the default pyusb backend.")
-            selected_backend = "pyusb"
+            logger.info("No backend stated. Selecting the default linux_kernel backend.")
+            selected_backend = "linux_kernel"
     if selected_backend == "network":
         # Not implemented due to lack of an available test device
         raise NotImplementedError

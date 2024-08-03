@@ -55,10 +55,8 @@ def main():
         try:
             selected_backend = guess_backend(args.printer)
         except:
-            logger.info(
-                "No backend stated. Selecting the default pyusb backend."
-            )
-            selected_backend = "pyusb"
+            logger.info("No backend stated. Selecting the default linux_kernel backend.")
+            selected_backend = 'linux_kernel'
 
     # List any printers found, if explicitly asked to do so or if no identifier has been provided.
     if args.list_printers or not args.printer:
