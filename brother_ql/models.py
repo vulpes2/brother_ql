@@ -32,7 +32,7 @@ class Model(object):
     expanded_mode = attrib(type=bool, default=True)
     #: Model has support for compressing the transmitted raster data.
     #: Some models with only USB connectivity don't support compression.
-    compression = attrib(type=bool, default=True)
+    compression_support = attrib(type=bool, default=True)
     #: Support for two color printing (black/red/white)
     #: available only on some newer models.
     two_color = attrib(type=bool, default=False)
@@ -51,7 +51,7 @@ ALL_MODELS = [
     Model(
         identifier="QL-500",
         min_max_length_dots=(295, 11811),
-        compression=False,
+        compression_support=False,
         mode_setting=False,
         expanded_mode=False,
         cutting=False,
@@ -62,7 +62,7 @@ ALL_MODELS = [
     Model(
         identifier="QL-550",
         min_max_length_dots=(295, 11811),
-        compression=False,
+        compression_support=False,
         mode_setting=False,
         series_code=0x30,
         model_code=0x4F,
@@ -71,7 +71,7 @@ ALL_MODELS = [
     Model(
         identifier="QL-560",
         min_max_length_dots=(295, 11811),
-        compression=False,
+        compression_support=False,
         mode_setting=False,
         series_code=0x34,
         model_code=0x31,
@@ -80,7 +80,7 @@ ALL_MODELS = [
     Model(
         identifier="QL-570",
         min_max_length_dots=(150, 11811),
-        compression=False,
+        compression_support=False,
         mode_setting=False,
         series_code=0x34,
         model_code=0x32,
@@ -110,7 +110,7 @@ ALL_MODELS = [
     Model(
         identifier="QL-700",
         min_max_length_dots=(150, 11811),
-        compression=False,
+        compression_support=False,
         mode_setting=False,
         series_code=0x34,
         model_code=0x35,
@@ -134,7 +134,7 @@ ALL_MODELS = [
         identifier="QL-800",
         min_max_length_dots=(150, 11811),
         two_color=True,
-        compression=False,
+        compression_support=False,
         num_invalidate_bytes=400,
         series_code=0x34,
         model_code=0x38,
