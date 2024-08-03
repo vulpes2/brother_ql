@@ -213,7 +213,7 @@ ALL_MODELS = [
     ),
     Model(
         identifier="PT-P700",
-        min_max_length_dots=(31, 14172),
+        min_max_length_dots=(31, 7086),
         number_bytes_per_row=16,
         series_code=0x30,
         model_code=0x67,
@@ -221,7 +221,7 @@ ALL_MODELS = [
     ),
     Model(
         identifier="PT-P750W",
-        min_max_length_dots=(31, 14172),
+        min_max_length_dots=(31, 7086),
         number_bytes_per_row=16,
         series_code=0x30,
         model_code=0x68,

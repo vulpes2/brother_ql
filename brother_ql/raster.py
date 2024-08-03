@@ -60,7 +60,7 @@ class BrotherQLRaster(object):
         self._compression = False
         self.exception_on_warning = False
         self.half_cut = True
-        self.no_chain_printing = False
+        self.no_chain_printing = True
 
         self.num_invalidate_bytes = 200
         for m in ModelsManager().iter_elements():
@@ -167,10 +167,7 @@ class BrotherQLRaster(object):
             self._unsupported("Trying to call add_autocut with a printer that doesn't support it")
             return
         self.data += b'\x1B\x69\x4D' # ESC i M
-        if self.model.startswith('PT'):
-            self.data += bytes([autocut << 5])
-        else:
-            self.data += bytes([autocut << 6])
+        self.data += bytes([autocut << 6])
 
     def add_cut_every(self, n=1):
         if self.model not in cuttingsupport:
