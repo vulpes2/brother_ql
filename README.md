@@ -26,13 +26,16 @@ The available label names can be listed with `brother_ql info labels`:
 
      Name      Printable px   Description
      12         106           12mm endless
+     12+17      306           12mm endless
+     18         234           18mm endless
      29         306           29mm endless
      38         413           38mm endless
      50         554           50mm endless
      54         590           54mm endless
      62         696           62mm endless
+     62red      696           62mm endless (black/red/white)
      102       1164           102mm endless
-     103       1200           103mm endless
+     103       1200           104mm endless
      104       1200           104mm endless
      17x54      165 x  566    17mm x 54mm die-cut
      17x87      165 x  956    17mm x 87mm die-cut
@@ -43,14 +46,19 @@ The available label names can be listed with `brother_ql info labels`:
      39x48      425 x  495    39mm x 48mm die-cut
      52x29      578 x  271    52mm x 29mm die-cut
      54x29      598 x  271    54mm x 29mm die-cut
+     60x86      672 x  954    60mm x 87mm die-cut
      62x29      696 x  271    62mm x 29mm die-cut
      62x100     696 x 1109    62mm x 100mm die-cut
      102x51    1164 x  526    102mm x 51mm die-cut
      102x152   1164 x 1660    102mm x 153mm die-cut
-     103x164   1200 x 1822    103mm x 164mm die-cut
+     103x164   1200 x 1822    104mm x 164mm die-cut
      d12         94 x   94    12mm round die-cut
      d24        236 x  236    24mm round die-cut
      d58        618 x  618    58mm round die-cut
+     pt12       - unknown -   12mm endless
+     pt18       - unknown -   18mm endless
+     pt24       - unknown -   24mm endless
+     pt36       - unknown -   36mm endless
 
 ### Backends
 
@@ -65,6 +73,8 @@ pyusb (3) | USB | ✔ (3.1) | ✔ (3.2) | ✔ (3.3)
 Warning: when using one of the USB backends make sure the Editor Lite feature is turned off (if your model supports it), otherwise the USB Printer interface won't be detected.
 
 ## Significant Changes:
+v 1.3 (unreleased):
+- Added new cli command for getting status of printer https://github.com/matmair/brother_ql-inventree/pull/53
 v1.2:
 - Remove support for Python 2 https://github.com/matmair/brother_ql-inventree/pull/43 / https://github.com/matmair/brother_ql-inventree/pull/45
 - Added support for PT-E550W https://github.com/matmair/brother_ql-inventree/pull/44
