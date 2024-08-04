@@ -15,11 +15,12 @@ from brother_ql.reader import interpret_response
 logger = logging.getLogger(__name__)
 
 def discover(backend_identifier='linux_kernel'):
-
+    if backend_identifier is None:
+        logger.info("Backend for discovery not specified, defaulting to linux_kernel.")
+        backend_identifier = "linux_kernel"
     be = backend_factory(backend_identifier)
     list_available_devices = be['list_available_devices']
     BrotherQLBackend       = be['backend_class']
-
     available_devices = list_available_devices()
     return available_devices
 
@@ -101,3 +102,50 @@ def send(instructions, printer_identifier=None, backend_identifier=None, blockin
         logger.info("Printing was successful. Waiting for the next job.")
 
     return status
+
+
+def status(
+    printer_identifier=None,
+    backend_identifier=None,
+):
+    """
+    Retrieve status info from the printer, including model and currently loaded media size.
+
+    :param str printer_identifier: Identifier for the printer.
+    :param str backend_identifier: Can enforce the use of a specific backend.
+    """
+
+    selected_backend = None
+    if backend_identifier:
+        selected_backend = backend_identifier
+    else:
+        try:
+            selected_backend = guess_backend(printer_identifier)
+        except ValueError:
+            logger.info("No backend stated. Selecting the default linux_kernel backend.")
+            selected_backend = "linux_kernel"
+    if selected_backend == "network":
+        # Not implemented due to lack of an available test device
+        raise NotImplementedError
+
+    be = backend_factory(selected_backend)
+    BrotherQLBackend = be["backend_class"]
+    printer = BrotherQLBackend(printer_identifier)
+
+    logger.info("Sending status information request to the printer.")
+    printer.write(b"\x1b\x69\x53")  # "ESC i S" Status information request
+    data = printer.read()
+    try:
+        result = interpret_response(data)
+    except ValueError:
+        logger.error("Failed to parse response data: %s", data)
+
+    logger.info(f"Printer Series Code: 0x{result['series_code']:02x}")
+    logger.info(f"Printer Model Code: 0x{result['model_code']:02x}")
+    logger.info(f"Printer Status Type: {result['status_type']} ")
+    logger.info(f"Printer Phase Type: {result['phase_type']})")
+    logger.info(f"Printer Errors: {result['errors']}")
+    logger.info(f"Media Type: {result['media_type']}")
+    logger.info(f"Media Size: {result['media_width']} x {result['media_length']} mm")
+
+    return result

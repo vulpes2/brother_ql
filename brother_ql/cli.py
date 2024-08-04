@@ -2,12 +2,15 @@
 
 # Python standard library
 import logging
+import os
+from urllib.parse import urlparse
 
 # external dependencies
 import click
 
 # imports from this very package
 from brother_ql.devicedependent import models, label_sizes, label_type_specs, DIE_CUT_LABEL, ENDLESS_LABEL, ROUND_DIE_CUT_LABEL
+from brother_ql.models import ModelsManager
 from brother_ql.backends import available_backends, backend_factory
 
 
@@ -43,7 +46,48 @@ def cli(ctx, *args, **kwargs):
 def discover(ctx):
     """ find connected label printers """
     backend = ctx.meta.get('BACKEND', 'pyusb')
-    discover_and_list_available_devices(backend)
+    if backend is None:
+        logger.info("Defaulting to pyusb as backend for discovery.")
+        backend = "pyusb"
+    from brother_ql.backends.helpers import discover, status
+
+    available_devices = discover(backend_identifier=backend)
+    for device in available_devices:
+        device_status = None
+        result = {"model": "unknown"}
+
+        # skip network discovery since it's not supported
+        if backend == "pyusb" or backend == "linux_kernel":
+            logger.info(f"Probing device at {device['identifier']}")
+
+            # check permissions before accessing lp* devices
+            if backend == "linux_kernel":
+                url = urlparse(device["identifier"])
+                if not os.access(url.path, os.W_OK):
+                    logger.info(
+                        f"Cannot access device {device['identifier']} due to insufficient permissions. You need to be a part of the lp group to access printers with this backend."
+                    )
+                    continue
+
+            # send status request
+            device_status = status(
+                printer_identifier=device["identifier"],
+                backend_identifier=backend,
+            )
+
+            # look up series code and model code
+            for m in ModelsManager().iter_elements():
+                if (
+                    device_status["series_code"] == m.series_code
+                    and device_status["model_code"] == m.model_code
+                ):
+                    result = {"model": m.identifier}
+                    break
+
+        result.update(device)
+        logger.info(
+            "Found a label printer at: {identifier} (model: {model})".format(**result),
+        )
 
 def discover_and_list_available_devices(backend):
     from brother_ql.backends.helpers import discover
@@ -120,7 +164,7 @@ def env(ctx, *args, **kwargs):
 
 @cli.command('print', short_help='Print a label')
 @click.argument('images', nargs=-1, type=click.File('rb'), metavar='IMAGE [IMAGE] ...')
-@click.option('-l', '--label', type=click.Choice(label_sizes), envvar='BROTHER_QL_LABEL', help='The label (size, type - die-cut or endless). Run `brother_ql info labels` for a full list including ideal pixel dimensions.')
+@click.option('-l', '--label', required=True, type=click.Choice(label_sizes), envvar='BROTHER_QL_LABEL', help='The label (size, type - die-cut or endless). Run `brother_ql info labels` for a full list including ideal pixel dimensions.')
 @click.option('-r', '--rotate', type=click.Choice(('auto', '0', '90', '180', '270')), default='auto', help='Rotate the image (counterclock-wise) by this amount of degrees.')
 @click.option('-t', '--threshold', type=float, default=70.0, help='The threshold value (in percent) to discriminate between black and white pixels.')
 @click.option('-d', '--dither', is_flag=True, help='Enable dithering when converting the image to b/w. If set, --threshold is meaningless.')
@@ -161,6 +205,18 @@ def analyze_cmd(ctx, *args, **kwargs):
 def send_cmd(ctx, *args, **kwargs):
     from brother_ql.backends.helpers import send
     send(instructions=kwargs['instructions'].read(), printer_identifier=ctx.meta.get('PRINTER'), backend_identifier=ctx.meta.get('BACKEND'), blocking=True)
+
+
+@cli.command(name="status", short_help="query printer status and the loaded media size")
+@click.pass_context
+def status_cmd(ctx, *args, **kwargs):
+    from brother_ql.backends.helpers import status
+
+    status(
+        printer_identifier=ctx.meta.get("PRINTER"),
+        backend_identifier=ctx.meta.get("BACKEND"),
+    )
+
 
 if __name__ == '__main__':
     cli()

@@ -167,6 +167,8 @@ def interpret_response(data):
         raise NameError("Printer response doesn't start with the usual header (80:20:42)", hex_format(data))
     for i, byte_name in enumerate(RESP_BYTE_NAMES):
         logger.debug('Byte %2d %24s %02X', i, byte_name+':', data[i])
+    series_code = data[3]
+    model_code = data[4]
     errors = []
     error_info_1 = data[8]
     error_info_2 = data[9]
@@ -204,6 +206,8 @@ def interpret_response(data):
         logger.error("Unknown phase type %02X", phase_type)
 
     response = {
+      'series_code': series_code,
+      'model_code': model_code,
       'status_type': status_type,
       'phase_type': phase_type,
       'media_type': media_type,

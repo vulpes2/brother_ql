@@ -21,7 +21,7 @@ def list_available_devices():
 
     returns: devices: a list of dictionaries with the keys 'identifier' and 'instance': \
         [ {'identifier': 'usb://0x04f9:0x2015/C5Z315686', 'instance': pyusb.core.Device()}, ]
-        The 'identifier' is of the format idVendor:idProduct_iSerialNumber.
+        The 'identifier' is of the format idVendor:idProduct/iSerialNumber.
     """
 
     class find_class(object):
@@ -44,8 +44,10 @@ def list_available_devices():
 
     def identifier(dev):
         try:
-            serial = usb.util.get_string(dev, 256, dev.iSerialNumber)
-            return 'usb://0x{:04x}:0x{:04x}_{}'.format(dev.idVendor, dev.idProduct, serial)
+            serial = usb.util.get_string(dev, dev.iSerialNumber)
+            return "usb://0x{:04x}:0x{:04x}/{}".format(
+                dev.idVendor, dev.idProduct, serial
+            )
         except:
             return 'usb://0x{:04x}:0x{:04x}'.format(dev.idVendor, dev.idProduct)
 

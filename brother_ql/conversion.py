@@ -73,7 +73,7 @@ def convert(qlr, images, label,  **kwargs):
     except BrotherQLUnsupportedCmd:
         pass
 
-    for image in images:
+    for i, image in enumerate(images):
         if isinstance(image, Image.Image):
             im = image
         else:
@@ -182,14 +182,16 @@ def convert(qlr, images, label,  **kwargs):
         except BrotherQLUnsupportedCmd:
             pass
         qlr.add_margins(label_specs['feed_margin'])
-        try:
-            if compress: qlr.add_compression(True)
-        except BrotherQLUnsupportedCmd:
-            pass
+        if qlr.compression_support:
+            qlr.add_compression(compress)
         if red:
             qlr.add_raster_data(black_im, red_im)
         else:
             qlr.add_raster_data(im)
-        qlr.add_print()
+        
+        if i == len(images) - 1:
+            qlr.add_print()
+        else:
+            qlr.add_print(last_page=False)
 
     return qlr.data

@@ -54,7 +54,7 @@ def _populate_model_legacy_structures():
         if model.mode_setting: modesetting.append(model.identifier)
         if model.cutting: cuttingsupport.append(model.identifier)
         if model.expanded_mode: expandedmode.append(model.identifier)
-        if model.compression: compressionsupport.append(model.identifier)
+        if model.compression_support: compressionsupport.append(model.identifier)
         if model.two_color: two_color_support.append(model.identifier)
 
 def _populate_label_legacy_structures():

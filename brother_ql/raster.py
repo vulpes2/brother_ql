@@ -57,15 +57,17 @@ class BrotherQLRaster(object):
         self.cut_at_end = True
         self.dpi_600 = False
         self.two_color_printing = False
-        self._compression = False
+        self.compression_enabled = False
+        self.compression_support = False
         self.exception_on_warning = False
         self.half_cut = True
-        self.no_chain_printing = False
+        self.no_chain_printing = True
 
         self.num_invalidate_bytes = 200
         for m in ModelsManager().iter_elements():
             if self.model == m.identifier:
                 self.num_invalidate_bytes = m.num_invalidate_bytes
+                self.compression_support = m.compression_support
                 break
 
     def _warn(self, problem, kind=BrotherQLRasterError):
@@ -167,10 +169,7 @@ class BrotherQLRaster(object):
             self._unsupported("Trying to call add_autocut with a printer that doesn't support it")
             return
         self.data += b'\x1B\x69\x4D' # ESC i M
-        if self.model.startswith('PT'):
-            self.data += bytes([autocut << 5])
-        else:
-            self.data += bytes([autocut << 6])
+        self.data += bytes([autocut << 6])
 
     def add_cut_every(self, n=1):
         if self.model not in cuttingsupport:
@@ -216,7 +215,7 @@ class BrotherQLRaster(object):
         if self.model not in compressionsupport:
             self._unsupported("Trying to set compression on a printer that doesn't support it")
             return
-        self._compression = compression
+        self.compression_enabled = compression
         self.data += b'\x4D' # M
         self.data += bytes([compression << 1])
 
@@ -258,7 +257,7 @@ class BrotherQLRaster(object):
         while start + row_len <= frame_len:
             for i, frame in enumerate(frames):
                 row = frame[start:start+row_len]
-                if self._compression:
+                if self.compression_enabled:
                     row = packbits.encode(row)
                 translen = len(row) # number of bytes to be transmitted
                 if self.model.startswith('PT'):
