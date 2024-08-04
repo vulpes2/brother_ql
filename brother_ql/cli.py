@@ -58,14 +58,14 @@ def discover(ctx):
 
         # skip network discovery since it's not supported
         if backend == "pyusb" or backend == "linux_kernel":
-            logger.info(f"Probing device at {device["identifier"]}")
+            logger.info(f"Probing device at {device['identifier']}")
 
             # check permissions before accessing lp* devices
             if backend == "linux_kernel":
                 url = urlparse(device["identifier"])
                 if not os.access(url.path, os.W_OK):
                     logger.info(
-                        f"Cannot access device {device["identifier"]} due to insufficient permissions. You need to be a part of the lp group to access printers with this backend."
+                        f"Cannot access device {device['identifier']} due to insufficient permissions. You need to be a part of the lp group to access printers with this backend."
                     )
                     continue
 

@@ -140,12 +140,12 @@ def status(
     except ValueError:
         logger.error("Failed to parse response data: %s", data)
 
-    logger.info(f"Printer Series Code: 0x{result["series_code"]:02x}")
-    logger.info(f"Printer Model Code: 0x{result["model_code"]:02x}")
-    logger.info(f"Printer Status Type: {result["status_type"]} ")
-    logger.info(f"Printer Phase Type: {result["phase_type"]})")
-    logger.info(f"Printer Errors: {result["errors"]}")
-    logger.info(f"Media Type: {result["media_type"]}")
-    logger.info(f"Media Size: {result["media_width"]} x {result["media_length"]} mm")
+    logger.info(f"Printer Series Code: 0x{result['series_code']:02x}")
+    logger.info(f"Printer Model Code: 0x{result['model_code']:02x}")
+    logger.info(f"Printer Status Type: {result['status_type']} ")
+    logger.info(f"Printer Phase Type: {result['phase_type']})")
+    logger.info(f"Printer Errors: {result['errors']}")
+    logger.info(f"Media Type: {result['media_type']}")
+    logger.info(f"Media Size: {result['media_width']} x {result['media_length']} mm")
 
     return result
