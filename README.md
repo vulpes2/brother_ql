@@ -65,6 +65,8 @@ pyusb (3) | USB | ✔ (3.1) | ✔ (3.2) | ✔ (3.3)
 Warning: when using one of the USB backends make sure the Editor Lite feature is turned off (if your model supports it), otherwise the USB Printer interface won't be detected.
 
 ## Significant Changes:
+v 1.3 (unreleased):
+- Added new cli command for getting status of printer https://github.com/matmair/brother_ql-inventree/pull/53
 v1.2:
 - Remove support for Python 2 https://github.com/matmair/brother_ql-inventree/pull/43 / https://github.com/matmair/brother_ql-inventree/pull/45
 - Added support for PT-E550W https://github.com/matmair/brother_ql-inventree/pull/44
