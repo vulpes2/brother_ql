@@ -278,7 +278,7 @@ def interpret_response(data):
         status_type = RESP_STATUS_TYPES[status_code]
         logger.debug("Status type: %s", status_type)
     else:
-        logger.error("Unknown status type %02X", status_type)
+        logger.error("Unknown status type %02X", status_code)
 
     phase_type = data[19]
     if phase_type in RESP_PHASE_TYPES:
