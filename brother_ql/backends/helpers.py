@@ -176,6 +176,10 @@ def get_setting(
     # switch to raster command mode
     printer.write(b"\x1b\x69\x61\x01")
     # send command
+    # 0x1b 0x69 0x55 setting
+    # u8 setting
+    # 0x01 read
+    # optional extra payload
     command = b"\x1b\x69\x55" + setting.to_bytes(1) + b"\x01"
     if payload is not None:
         command += payload
@@ -200,6 +204,10 @@ def write_setting(
     # switch to raster command mode
     printer.write(b"\x1b\x69\x61\x01")
     # write settings
+    # 0x1b 0x69 0x55 setting
+    # u8 setting
+    # 0x0 write
+    # payload (size dependent on setting and machine series)
     command = b"\x1b\x69\x55" + setting.to_bytes(1) + b"\x00"
     command += payload
     printer.write(command)
