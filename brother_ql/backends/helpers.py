@@ -8,6 +8,7 @@ Helpers for the subpackage brother_ql.backends
 """
 
 import logging, time
+from warnings import warn
 
 from brother_ql.backends import backend_factory, guess_backend
 from brother_ql.reader import interpret_response
@@ -157,6 +158,30 @@ def get_status(
             raise ValueError(f"Printer reported 0x{result['status_code']:02x} status instead of 0x{target_status:02x}")
     return result
 
+
+def status(
+    printer_identifier=None,
+    backend_identifier=None,
+):
+    """
+    DEPRECATED
+    Retrieve status info from the printer, including model and currently loaded media size.
+    This function will be removed in a release after 2025-08-05.
+
+    :param str printer_identifier: Identifier for the printer.
+    :param str backend_identifier: Can enforce the use of a specific backend.
+    """
+    warn("The 'status' function is deprecated. Use 'get_status' instead.", DeprecationWarning, stacklevel=2)
+
+    printer = get_printer(printer_identifier, backend_identifier)
+    result = get_status(printer)
+    logger.info(f"Printer Series Code: 0x{result['series_code']:02x}")
+    logger.info(f"Printer Model Code: 0x{result['model_code']:02x}")
+    logger.info(f"Printer Status Type: {result['status_type']} ")
+    logger.info(f"Printer Phase Type: {result['phase_type']})")
+    logger.info(f"Printer Errors: {result['errors']}")
+    logger.info(f"Media Type: {result['media_type']}")
+    logger.info(f"Media Size: {result['media_width']} x {result['media_length']} mm")
 
 def get_setting(
     printer,
