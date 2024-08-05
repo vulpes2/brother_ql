@@ -49,16 +49,15 @@ def discover(ctx):
     if backend is None:
         logger.info("Defaulting to pyusb as backend for discovery.")
         backend = "pyusb"
-    from brother_ql.backends.helpers import discover, status
+    from brother_ql.backends.helpers import discover, get_printer, get_status
 
     available_devices = discover(backend_identifier=backend)
     for device in available_devices:
-        device_status = None
-        result = {"model": "unknown"}
+        status = None
 
         # skip network discovery since it's not supported
         if backend == "pyusb" or backend == "linux_kernel":
-            logger.info(f"Probing device at {device['identifier']}")
+            print(f"Probing device at {device['identifier']}")
 
             # check permissions before accessing lp* devices
             if backend == "linux_kernel":
@@ -70,24 +69,12 @@ def discover(ctx):
                     continue
 
             # send status request
-            device_status = status(
+            printer = get_printer(
                 printer_identifier=device["identifier"],
                 backend_identifier=backend,
             )
-
-            # look up series code and model code
-            for m in ModelsManager().iter_elements():
-                if (
-                    device_status["series_code"] == m.series_code
-                    and device_status["model_code"] == m.model_code
-                ):
-                    result = {"model": m.identifier}
-                    break
-
-        result.update(device)
-        logger.info(
-            "Found a label printer at: {identifier} (model: {model})".format(**result),
-        )
+            status = get_status(printer)
+            print(f"Found a label printer at: {device['identifier']} ({status['model']})")
 
 def discover_and_list_available_devices(backend):
     from brother_ql.backends.helpers import discover
@@ -210,33 +197,42 @@ def send_cmd(ctx, *args, **kwargs):
 @cli.command(name="status", short_help="query printer status and the loaded media size")
 @click.pass_context
 def status_cmd(ctx, *args, **kwargs):
-    from brother_ql.backends.helpers import status
+    from brother_ql.backends.helpers import get_status, get_printer
 
-    status(
-        printer_identifier=ctx.meta.get("PRINTER"),
-        backend_identifier=ctx.meta.get("BACKEND"),
-    )
+    printer=get_printer(ctx.meta.get("PRINTER"), ctx.meta.get("BACKEND"))
+    logger.debug("Sending status information request to the printer.")
+    result = get_status(printer)
+
+    print(f"Model: {result['model']}")
+    if result['model'] == "Unknown":
+        print("Unknown printer detected")
+        print(f"Series Code: 0x{result['series_code']:02x}")
+        print(f"Model Code: 0x{result['model_code']:02x}")
+    print(f"Status type: {result['status_type']}")
+    print(f"Phase: {result['phase_type']}")
+    if len(result['errors']) != 0:
+        print(f"Errors: {result['errors']}")
+    print(f"Media type: {result['media_type']}")
+    print(f"Media size: {result['media_width']} x {result['media_length']} mm")
+
 
 @cli.command(name="configure", short_help="read and modify printer settings")
-@click.option('-w', '--write', is_flag=True, default=False, help='Write settings')
-@click.option('-on', '--auto-power-on', is_flag=True, show_default=True, default=False, help='Enable automatic power-on')
-@click.option('-off', '--power-off-delay', type=click.IntRange(0, 6), default=6, help='Automatic power-off delay in multiples of 10 minutes. Use 0 to disable automatic power-off.')
-
+@click.argument('action', required=True, type=click.Choice(['get', 'set']), metavar='[ACTION]')
+@click.argument('key', required=True, type=click.Choice(['power-off-delay', 'auto-power-on']), metavar='[KEY]')
+@click.argument('value', type=int, metavar='[VALUE]', default=-1)
 @click.pass_context
 def configure_cmd(ctx, *args, **kwargs):
     from brother_ql.backends.helpers import configure
 
-    if ctx.meta['MODEL'] is None:
-        raise ValueError("You need to provide a printer model to change printer settings.")
-    elif not ctx.meta['MODEL'].startswith("QL"):
-        raise ValueError("Only QL series printers are supported at the moment.")
-    
+    if kwargs.get('action') == 'set' and kwargs.get('value') == -1:
+        raise ValueError(f"Specify a valid value for key {kwargs.get('key')}")
+
     configure(
         printer_identifier=ctx.meta.get("PRINTER"),
         backend_identifier=ctx.meta.get("BACKEND"),
-        write=kwargs.get('write'),
-        auto_power_off=kwargs.get('power_off_delay'),
-        auto_power_on=kwargs.get('auto_power_on')
+        action=kwargs.get('action'),
+        key=kwargs.get('key'),
+        value=kwargs.get('value')
     )
 
 if __name__ == '__main__':

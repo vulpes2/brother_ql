@@ -4,6 +4,7 @@ import struct
 import io
 import logging
 import sys
+from brother_ql.models import ModelsManager
 
 from PIL import Image
 from PIL.ImageOps import colorize
@@ -66,11 +67,15 @@ RESP_ERROR_INFORMATION_2_DEF = {
 
 RESP_MEDIA_TYPES = {
   0x00: 'No media',
-  0x01: 'Laminated tape',
-  0x03: 'Non-laminated type',
-  0x11: 'Heat-Shrink Tube',
-  0x0A: 'Continuous length tape',
-  0x0B: 'Die-cut labels',
+  0x01: '[TZe] Laminated tape',
+  0x03: '[TZe] Non-laminated type',
+  0x11: '[TZe] Heat-Shrink Tube (HS 2:1)',
+  0x17: '[TZe] Heat-Shrink Tube (HS 3:1)',
+  0x0A: '[DK] Continuous length tape',
+  0x0B: '[DK] Die-cut labels',
+  0x4A: '[RD] Continuous length tape',
+  0x4B: '[RD] Die-cut labels',
+  0xFF: 'Incompatible tape',
 }
 
 RESP_STATUS_TYPES = {
@@ -90,24 +95,24 @@ RESP_PHASE_TYPES = {
 }
 
 RESP_BYTE_NAMES = [
-  'Print head mark',
-  'Size',
-  'Fixed (B=0x42)',
-  'Device dependent',
-  'Device dependent',
-  'Fixed (0=0x30)',
-  'Fixed (0x00 or 0=0x30)',
-  'Fixed (0x00)',
+  'Print head mark (0x80)',
+  'Size (0x20)',
+  'Brother code (B=0x42)',
+  'Series code',
+  'Model code',
+  'Country code',
+  'Power status',
+  'Reserved',
   'Error information 1',
   'Error information 2',
   'Media width',
   'Media type',
-  'Fixed (0x00)',
-  'Fixed (0x00)',
-  'Reserved',
+  'Number of colors',
+  'Media length (high)',
+  'Media sensor value',
   'Mode',
-  'Fixed (0x00)',
-  'Media length',
+  'Density',
+  'Media length (low)',
   'Status type',
   'Phase type',
   'Phase number (high)',
@@ -116,7 +121,12 @@ RESP_BYTE_NAMES = [
   'Expansion area',
   'Tape color information',
   'Text color information',
-  'Hardware settings',
+  'Hardware settings 1',
+  'Hardware settings 2',
+  'Hardware settings 3',
+  'Hardware settings 4',
+  'Requested setting',
+  'Reserved',
 ]
 
 def hex_format(data):
@@ -187,16 +197,16 @@ def interpret_response(data):
     media_width  = data[10]
     media_length = data[17]
 
-    media_type = data[11]
-    if media_type in RESP_MEDIA_TYPES:
-        media_type = RESP_MEDIA_TYPES[media_type]
+    media_code = data[11]
+    if media_code in RESP_MEDIA_TYPES:
+        media_type = RESP_MEDIA_TYPES[media_code]
         logger.debug("Media type: %s", media_type)
     else:
-        logger.error("Unknown media type %02X", media_type)
+        logger.error("Unknown media type %02X", media_code)
 
-    status_type_code = data[18]
-    if status_type_code in RESP_STATUS_TYPES:
-        status_type = RESP_STATUS_TYPES[status_type_code]
+    status_code = data[18]
+    if status_code in RESP_STATUS_TYPES:
+        status_type = RESP_STATUS_TYPES[status_code]
         logger.debug("Status type: %s", status_type)
     else:
         logger.error("Unknown status type %02X", status_type)
@@ -208,18 +218,28 @@ def interpret_response(data):
     else:
         logger.error("Unknown phase type %02X", phase_type)
 
-    setting = None
     # settings report
-    if status_type_code == 0xF0:
+    setting = None
+    if status_code == 0xF0:
         logger.debug("Settings report detected")
         setting = data[30]
+
+    # printer model detection
+    model = "Unknown"
+    for m in ModelsManager().iter_elements():
+        if series_code == m.series_code and model_code == m.model_code:
+            model = m.identifier
+            break
 
     response = {
       'series_code': series_code,
       'model_code': model_code,
+      'model': model,
       'status_type': status_type,
+      'status_code': status_code,
       'phase_type': phase_type,
       'media_type': media_type,
+      'media_code': media_code,
       'media_width': media_width,
       'media_length': media_length,
       'setting': setting,
