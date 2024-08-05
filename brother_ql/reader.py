@@ -67,15 +67,74 @@ RESP_ERROR_INFORMATION_2_DEF = {
 
 RESP_MEDIA_TYPES = {
   0x00: 'No media',
-  0x01: '[TZe] Laminated tape',
-  0x03: '[TZe] Non-laminated type',
-  0x11: '[TZe] Heat-Shrink Tube (HS 2:1)',
-  0x17: '[TZe] Heat-Shrink Tube (HS 3:1)',
-  0x0A: '[DK] Continuous length tape',
-  0x0B: '[DK] Die-cut labels',
-  0x4A: '[RD] Continuous length tape',
-  0x4B: '[RD] Die-cut labels',
+  0x01: 'Laminated tape',
+  0x03: 'Non-laminated type',
+  0x11: 'Heat-Shrink Tube (HS 2:1)',
+  0x17: 'Heat-Shrink Tube (HS 3:1)',
+  0x0A: 'Continuous length tape',
+  0x0B: 'Die-cut labels',
+  0x4A: 'Continuous length tape',
+  0x4B: 'Die-cut labels',
   0xFF: 'Incompatible tape',
+}
+
+RESP_MEDIA_CATEGORIES = {
+  0x00: 'No media',
+  0x01: 'TZe',
+  0x03: 'TZe',
+  0x11: 'TZe',
+  0x17: 'TZe',
+  0x0A: 'DK',
+  0x0B: 'DK',
+  0x4A: 'RD',
+  0x4B: 'RD',
+  0xFF: 'Incompatible',
+}
+
+RESP_TAPE_COLORS = {
+  0x01: 'White',
+  0x02: 'Other',
+  0x03: 'Clear',
+  0x04: 'Red',
+  0x05: 'Blue',
+  0x06: 'Yellow',
+  0x07: 'Green',
+  0x08: 'Black',
+  0x09: 'Clear(White text)',
+  0x20: 'Matte White',
+  0x21: 'Matte Clear',
+  0x22: 'Matte Silver',
+  0x23: 'Satin Gold',
+  0x24: 'Satin Silver',
+  0x30: 'Blue(D)',
+  0x31: 'Red(D)',
+  0x40: 'Fluorescent Orange',
+  0x41: 'Fluorescent Yellow',
+  0x50: 'Berry Pink(S)',
+  0x51: 'Light Gray(S)',
+  0x52: 'Lime Green(S)',
+  0x60: 'Yellow(F)',
+  0x61: 'Pink(F)',
+  0x62: 'Blue(F)',
+  0x70: 'White(Heat-shrink Tube)',
+  0x90: 'White(Flex. ID)',
+  0x91: 'Yellow(Flex. ID)',
+  0xF0: 'Clearning',
+  0xF1: 'Stencil',
+  0xFF: 'Incompatible',
+}
+
+RESP_TEXT_COLORS = {
+  0x01: 'White',
+  0x04: 'Red',
+  0x05: 'Blue',
+  0x08: 'Black',
+  0x0A: 'Gold',
+  0x62: 'Blue(F)',
+  0xF0: 'Cleaning',
+  0xF1: 'Stencil',
+  0x02: 'Other',
+  0xFF: 'Incompatible',
 }
 
 RESP_STATUS_TYPES = {
@@ -198,11 +257,21 @@ def interpret_response(data):
     media_length = data[17]
 
     media_code = data[11]
+    media_category = ""
     if media_code in RESP_MEDIA_TYPES:
         media_type = RESP_MEDIA_TYPES[media_code]
+        media_category = RESP_MEDIA_CATEGORIES[media_code]
         logger.debug("Media type: %s", media_type)
     else:
         logger.error("Unknown media type %02X", media_code)
+
+    tape_color_code = data[24]
+    text_color_code = data[25]
+    tape_color = ''
+    text_color = ''
+    if media_category == 'TZe':
+        tape_color = RESP_TAPE_COLORS[tape_color_code]
+        text_color = RESP_TEXT_COLORS[text_color_code]
 
     status_code = data[18]
     if status_code in RESP_STATUS_TYPES:
@@ -239,7 +308,9 @@ def interpret_response(data):
       'status_code': status_code,
       'phase_type': phase_type,
       'media_type': media_type,
-      'media_code': media_code,
+      'media_category': media_category,
+      'tape_color': tape_color,
+      'text_color': text_color,
       'media_width': media_width,
       'media_length': media_length,
       'setting': setting,

@@ -212,7 +212,11 @@ def status_cmd(ctx, *args, **kwargs):
     print(f"Phase: {result['phase_type']}")
     if len(result['errors']) != 0:
         print(f"Errors: {result['errors']}")
-    print(f"Media type: {result['media_type']}")
+    print(f"Media type: [{result['media_category']}] {result['media_type']}")
+    if result['media_category'] == 'TZe':
+        print("Note: tape color information may be incorrect for aftermarket tape cartridges.")
+        print(f"Tape color: {result['tape_color']}")
+        print(f"Text color: {result['text_color']}")
     print(f"Media size: {result['media_width']} x {result['media_length']} mm")
 
 
