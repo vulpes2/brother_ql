@@ -57,7 +57,7 @@ def discover(ctx):
 
         # skip network discovery since it's not supported
         if backend == "pyusb" or backend == "linux_kernel":
-            print(f"Probing device at {device['identifier']}")
+            logger.info(f"Probing device at {device['identifier']}")
 
             # check permissions before accessing lp* devices
             if backend == "linux_kernel":

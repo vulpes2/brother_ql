@@ -268,4 +268,5 @@ def configure(
     else:
         raise ValueError(f"Key {key} is invalid")
 
-    print(f"{key}: {retrieved_val}")
+    logger.info(f"{key}: {retrieved_val}")
+    return retrieved_val
