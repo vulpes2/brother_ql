@@ -29,7 +29,9 @@ OPCODES = {
     b'\x1b\x69\x4B':         ("expanded",        1, ""),
     b'\x1b\x69\x64':         ("margins",         2, ""),
     b'\x1b\x69\x55\x77\x01': ('amedia',        127, "Additional media information command"),
+    b'\x1b\x69\x55\x41':     ('auto_power_off',       -1, "Auto power off setting command"),
     b'\x1b\x69\x55\x4A':     ('jobid',          14, "Job ID setting command"),
+    b'\x1b\x69\x55\x70':     ('auto_power_on',       -1, "Auto power on setting command"),
     b'\x1b\x69\x58\x47':     ("request_config",  0, "Request transmission of .ini config file of printer"),
     b'\x1b\x69\x6B\x63':     ("number_of_copies",  2, "Internal specification commands"),
     b'\x1b\x69\x53':         ('status request',  0, "A status information request sent to the printer"),
@@ -79,6 +81,7 @@ RESP_STATUS_TYPES = {
   0x04: 'Turned off',
   0x05: 'Notification',
   0x06: 'Phase change',
+  0xF0: 'Settings report',
 }
 
 RESP_PHASE_TYPES = {
@@ -191,9 +194,9 @@ def interpret_response(data):
     else:
         logger.error("Unknown media type %02X", media_type)
 
-    status_type = data[18]
-    if status_type in RESP_STATUS_TYPES:
-        status_type = RESP_STATUS_TYPES[status_type]
+    status_type_code = data[18]
+    if status_type_code in RESP_STATUS_TYPES:
+        status_type = RESP_STATUS_TYPES[status_type_code]
         logger.debug("Status type: %s", status_type)
     else:
         logger.error("Unknown status type %02X", status_type)
@@ -205,6 +208,12 @@ def interpret_response(data):
     else:
         logger.error("Unknown phase type %02X", phase_type)
 
+    setting = None
+    # settings report
+    if status_type_code == 0xF0:
+        logger.debug("Settings report detected")
+        setting = data[30]
+
     response = {
       'series_code': series_code,
       'model_code': model_code,
@@ -213,6 +222,7 @@ def interpret_response(data):
       'media_type': media_type,
       'media_width': media_width,
       'media_length': media_length,
+      'setting': setting,
       'errors': errors,
     }
     return response

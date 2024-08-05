@@ -217,6 +217,27 @@ def status_cmd(ctx, *args, **kwargs):
         backend_identifier=ctx.meta.get("BACKEND"),
     )
 
+@cli.command(name="configure", short_help="read and modify printer settings")
+@click.option('-w', '--write', is_flag=True, default=False, help='Write settings')
+@click.option('-on', '--auto-power-on', is_flag=True, show_default=True, default=False, help='Enable automatic power-on')
+@click.option('-off', '--power-off-delay', type=click.IntRange(0, 6), default=6, help='Automatic power-off delay in multiples of 10 minutes. Use 0 to disable automatic power-off.')
+
+@click.pass_context
+def configure_cmd(ctx, *args, **kwargs):
+    from brother_ql.backends.helpers import configure
+
+    if ctx.meta['MODEL'] is None:
+        raise ValueError("You need to provide a printer model to change printer settings.")
+    elif not ctx.meta['MODEL'].startswith("QL"):
+        raise ValueError("Only QL series printers are supported at the moment.")
+    
+    configure(
+        printer_identifier=ctx.meta.get("PRINTER"),
+        backend_identifier=ctx.meta.get("BACKEND"),
+        write=kwargs.get('write'),
+        auto_power_off=kwargs.get('power_off_delay'),
+        auto_power_on=kwargs.get('auto_power_on')
+    )
 
 if __name__ == '__main__':
     cli()

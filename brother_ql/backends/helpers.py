@@ -103,13 +103,12 @@ def send(instructions, printer_identifier=None, backend_identifier=None, blockin
 
     return status
 
-
-def status(
+def get_printer(
     printer_identifier=None,
     backend_identifier=None,
 ):
     """
-    Retrieve status info from the printer, including model and currently loaded media size.
+    Instantiate a printer object for communication. Only bidirectional transport backends are supported.
 
     :param str printer_identifier: Identifier for the printer.
     :param str backend_identifier: Can enforce the use of a specific backend.
@@ -131,6 +130,18 @@ def status(
     be = backend_factory(selected_backend)
     BrotherQLBackend = be["backend_class"]
     printer = BrotherQLBackend(printer_identifier)
+    return printer
+
+def status(
+    printer_identifier=None,
+    backend_identifier=None,
+):
+    """
+    Retrieve status info from the printer, including model and currently loaded media size.
+
+    """
+
+    printer=get_printer(printer_identifier, backend_identifier)
 
     logger.info("Sending status information request to the printer.")
     printer.write(b"\x1b\x69\x53")  # "ESC i S" Status information request
@@ -147,5 +158,95 @@ def status(
     logger.info(f"Printer Errors: {result['errors']}")
     logger.info(f"Media Type: {result['media_type']}")
     logger.info(f"Media Size: {result['media_width']} x {result['media_length']} mm")
+
+    return result
+
+def configure(
+    printer_identifier=None,
+    backend_identifier=None,
+    write=False,
+    auto_power_off=None,
+    auto_power_on=None,
+):
+    """
+    Read or modify power settings.
+
+    :param bool write: Write configuration to printer
+    :param int auto_power_off: multiples of 10 minutes for power off, 0 means disabled
+    :param bool auto_power_on: whether to enable auto power on or not, 1 means enabled, 0 means disabled
+    """
+    printer=get_printer(printer_identifier, backend_identifier)
+
+    if write:
+        if auto_power_off is None or auto_power_on is None:
+            raise ValueError("You must provide the settings values")
+        if auto_power_off < 0 or auto_power_off > 6:
+            raise ValueError("Auto power off can only be set between 0 to 6")
+        if type(auto_power_on) is not bool:
+            raise ValueError("Auto power on is a boolean setting")
+
+    printer.write(b"\x1b\x69\x53")  # "ESC i S" Status information request
+    data = printer.read()
+    result = interpret_response(data)
+    if result['status_type'] != 'Reply to status request':
+        raise ValueError
+
+    if write:
+        # change auto power on settings
+        printer.write(b"\x1b\x69\x61\x01") # Switch to raster command mode
+        # 0x1b 0x69 0x55 settings
+        # 0x70 auto power on
+        # 0x00 write
+        # bool state
+        command = b"\x1b\x69\x55\x70\x00" + auto_power_on.to_bytes(1)
+        printer.write(command)
+
+        # retrieve status to make sure no errors occured
+        printer.write(b"\x1b\x69\x53")  # "ESC i S" Status information request
+        data = printer.read()
+        result = interpret_response(data)
+        if result['status_type'] != 'Reply to status request':
+            raise ValueError("Failed to modify settings")
+
+    # read auto power on settings
+    printer.write(b"\x1b\x69\x61\x01") # Switch to raster command mode
+    # 0x1b 0x69 0x55 settings
+    # 0x70 auto power on
+    # 0x01 read
+    printer.write(b"\x1b\x69\x55\x70\x01")
+    data = printer.read()
+    result = interpret_response(data)
+    if result['status_type'] != 'Settings report':
+        raise ValueError
+    logger.info(f"Auto power on: {'Enabled' if result['setting'] else 'Disabled'}")
+
+    if write:
+        # change auto power off settings
+        printer.write(b"\x1b\x69\x61\x01") # Switch to raster command mode
+        # 0x1b 0x69 0x55 settings
+        # 0x41 auto power off
+        # 0x00 write
+        # u8 multiples of 10 minutes, 0 means disabled
+        command = b"\x1b\x69\x55\x41\x00" + auto_power_off.to_bytes(1)
+        printer.write(command)
+        
+        # retrieve status to make sure no errors occured
+        printer.write(b"\x1b\x69\x53")  # "ESC i S" Status information request
+        data = printer.read()
+        result = interpret_response(data)
+        if result['status_type'] != 'Reply to status request':
+            raise ValueError("Failed to modify settings")
+
+    # read auto power off settings
+    printer.write(b"\x1b\x69\x61\x01") # Switch to raster command mode
+    # 0x1b 0x69 0x55 settings
+    # 0x41 auto power off
+    # 0x01 read
+    printer.write(b"\x1b\x69\x55\x41\x01") 
+    data = printer.read()
+    result = interpret_response(data)
+    if result['status_type'] != 'Settings report':
+        raise ValueError
+    logger.info(f"Auto power off delay: {result['setting']*10} minutes")
 
     return result
