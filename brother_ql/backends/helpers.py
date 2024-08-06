@@ -103,13 +103,12 @@ def send(instructions, printer_identifier=None, backend_identifier=None, blockin
 
     return status
 
-
-def status(
+def get_printer(
     printer_identifier=None,
     backend_identifier=None,
 ):
     """
-    Retrieve status info from the printer, including model and currently loaded media size.
+    Instantiate a printer object for communication. Only bidirectional transport backends are supported.
 
     :param str printer_identifier: Identifier for the printer.
     :param str backend_identifier: Can enforce the use of a specific backend.
@@ -131,21 +130,151 @@ def status(
     be = backend_factory(selected_backend)
     BrotherQLBackend = be["backend_class"]
     printer = BrotherQLBackend(printer_identifier)
+    return printer
 
-    logger.info("Sending status information request to the printer.")
-    printer.write(b"\x1b\x69\x53")  # "ESC i S" Status information request
+def get_status(
+    printer,
+    receive_only=False,
+    target_status=None,
+):
+    """
+    Get printer status.
+
+    :param BrotherQLBackendGeneric printer: A printer instance.
+    :param bool receive_only: Don't send the status request command.
+    :param int target_status: Expected status code.
+    """
+
+    if not receive_only:
+        printer.write(b"\x1b\x69\x53")  # "ESC i S" Status information request
     data = printer.read()
     try:
         result = interpret_response(data)
     except ValueError:
         logger.error("Failed to parse response data: %s", data)
-
-    logger.info(f"Printer Series Code: 0x{result['series_code']:02x}")
-    logger.info(f"Printer Model Code: 0x{result['model_code']:02x}")
-    logger.info(f"Printer Status Type: {result['status_type']} ")
-    logger.info(f"Printer Phase Type: {result['phase_type']})")
-    logger.info(f"Printer Errors: {result['errors']}")
-    logger.info(f"Media Type: {result['media_type']}")
-    logger.info(f"Media Size: {result['media_width']} x {result['media_length']} mm")
-
+    if target_status is not None:
+        if result['status_code'] != target_status:
+            raise ValueError(f"Printer reported 0x{result['status_code']:02x} status instead of 0x{target_status:02x}")
     return result
+
+
+def get_setting(
+    printer,
+    setting,
+    payload=None
+):
+    """
+    Get setting from printer.
+
+    :param BrotherQLBackendGeneric printer: A printer instance.
+    :param int setting: The code for the setting.
+    :param bytes payload: Optional additional payload, usually not required.
+    """
+
+    # ensure printer is free of errors before proceeding
+    get_status(printer, target_status=0x0)
+    # switch to raster command mode
+    printer.write(b"\x1b\x69\x61\x01")
+    # send command
+    # 0x1b 0x69 0x55 setting
+    # u8 setting
+    # 0x01 read
+    # optional extra payload
+    command = b"\x1b\x69\x55" + setting.to_bytes(1) + b"\x01"
+    if payload is not None:
+        command += payload
+    printer.write(command)
+    result = get_status(printer, receive_only=True, target_status=0xF0)
+    return result
+
+
+def write_setting(
+    printer,
+    setting,
+    payload,
+):
+    """
+    Write setting to printer.
+
+    :param BrotherQLBackendGeneric printer: A printer instance.
+    :param int setting: The code for the setting.
+    :param bytes payload: Payload for the setting.
+    """
+
+    # switch to raster command mode
+    printer.write(b"\x1b\x69\x61\x01")
+    # write settings
+    # 0x1b 0x69 0x55 setting
+    # u8 setting
+    # 0x0 write
+    # payload (size dependent on setting and machine series)
+    command = b"\x1b\x69\x55" + setting.to_bytes(1) + b"\x00"
+    command += payload
+    printer.write(command)
+    # retrieve status to make sure no errors occured
+    result = get_status(printer)
+    if result['status_code'] != 0x0:
+        raise ValueError("Failed to modify settings")
+    return result
+
+
+def configure(
+    printer_identifier=None,
+    backend_identifier=None,
+    action="get",
+    key=None,
+    value=None,
+):
+    """
+    Read or modify power settings.
+
+    :param str printer_identifier: Identifier for the printer
+    :param str backend_identifier: Can enforce the use of a specific backend
+    :param str action: Action to perform, get or set
+    :param str key: Key name for the settings
+    :param int value: Value to update for the specified key
+    """
+
+    printer=get_printer(printer_identifier, backend_identifier)
+
+    if action not in ['get', 'set']:
+        raise ValueError(f"Invalid action '{action}'")
+    if key not in ['power-off-delay', 'auto-power-on']:
+        raise ValueError(f"Invalid key '{key}'")
+    if action == 'set':
+        if value is None:
+            raise ValueError(f"Specify a valid value for key '{key}'")
+
+    series_code = get_status(printer, target_status=0x0)['series_code']
+
+    if action == 'set':
+        if key == 'auto-power-on':
+            payload = value.to_bytes(1)
+            write_setting(printer, 0x70, payload)
+            get_status(printer, 0x0)
+        elif key == 'power-off-delay':
+            payload = b''
+            # 0x30 series needs an extra byte here
+            if series_code == 0x30:
+                payload += b"\x00"
+            payload += value.to_bytes(1)
+            write_setting(printer, 0x41, payload)
+            get_status(printer, 0x0)
+        else:
+            raise ValueError(f"Key {key} is invalid")
+
+    # retrieve settings
+    retrieved_val = None
+    if key == 'auto-power-on':
+        retrieved_val = get_setting(printer, 0x70)['setting']
+    elif key == 'power-off-delay':
+        payload = b''
+        # 0x30 series needs an extra byte here
+        if series_code == 0x30:
+            payload += b"\x00"
+        retrieved_val = get_setting(printer, 0x41, payload)['setting']
+    else:
+        raise ValueError(f"Key {key} is invalid")
+
+    logger.info(f"{key}: {retrieved_val}")
+    return retrieved_val

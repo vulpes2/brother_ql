@@ -49,12 +49,11 @@ def discover(ctx):
     if backend is None:
         logger.info("Defaulting to pyusb as backend for discovery.")
         backend = "pyusb"
-    from brother_ql.backends.helpers import discover, status
+    from brother_ql.backends.helpers import discover, get_printer, get_status
 
     available_devices = discover(backend_identifier=backend)
     for device in available_devices:
-        device_status = None
-        result = {"model": "unknown"}
+        status = None
 
         # skip network discovery since it's not supported
         if backend == "pyusb" or backend == "linux_kernel":
@@ -70,24 +69,12 @@ def discover(ctx):
                     continue
 
             # send status request
-            device_status = status(
+            printer = get_printer(
                 printer_identifier=device["identifier"],
                 backend_identifier=backend,
             )
-
-            # look up series code and model code
-            for m in ModelsManager().iter_elements():
-                if (
-                    device_status["series_code"] == m.series_code
-                    and device_status["model_code"] == m.model_code
-                ):
-                    result = {"model": m.identifier}
-                    break
-
-        result.update(device)
-        logger.info(
-            "Found a label printer at: {identifier} (model: {model})".format(**result),
-        )
+            status = get_status(printer)
+            print(f"Found a label printer at: {device['identifier']} ({status['model']})")
 
 def discover_and_list_available_devices(backend):
     from brother_ql.backends.helpers import discover
@@ -210,13 +197,47 @@ def send_cmd(ctx, *args, **kwargs):
 @cli.command(name="status", short_help="query printer status and the loaded media size")
 @click.pass_context
 def status_cmd(ctx, *args, **kwargs):
-    from brother_ql.backends.helpers import status
+    from brother_ql.backends.helpers import get_status, get_printer
 
-    status(
+    printer=get_printer(ctx.meta.get("PRINTER"), ctx.meta.get("BACKEND"))
+    logger.debug("Sending status information request to the printer.")
+    result = get_status(printer)
+
+    print(f"Model: {result['model']}")
+    if result['model'] == "Unknown":
+        print("Unknown printer detected")
+        print(f"Series Code: 0x{result['series_code']:02x}")
+        print(f"Model Code: 0x{result['model_code']:02x}")
+    print(f"Status type: {result['status_type']}")
+    print(f"Phase: {result['phase_type']}")
+    if len(result['errors']) != 0:
+        print(f"Errors: {result['errors']}")
+    print(f"Media type: [{result['media_category']}] {result['media_type']}")
+    if result['media_category'] == 'TZe':
+        print("Note: tape color information may be incorrect for aftermarket tape cartridges.")
+        print(f"Tape color: {result['tape_color']}")
+        print(f"Text color: {result['text_color']}")
+    print(f"Media size: {result['media_width']} x {result['media_length']} mm")
+
+
+@cli.command(name="configure", short_help="read and modify printer settings")
+@click.argument('action', required=True, type=click.Choice(['get', 'set']), metavar='[ACTION]')
+@click.argument('key', required=True, type=click.Choice(['power-off-delay', 'auto-power-on']), metavar='[KEY]')
+@click.argument('value', type=int, metavar='[VALUE]', default=-1)
+@click.pass_context
+def configure_cmd(ctx, *args, **kwargs):
+    from brother_ql.backends.helpers import configure
+
+    if kwargs.get('action') == 'set' and kwargs.get('value') == -1:
+        raise ValueError(f"Specify a valid value for key {kwargs.get('key')}")
+
+    configure(
         printer_identifier=ctx.meta.get("PRINTER"),
         backend_identifier=ctx.meta.get("BACKEND"),
+        action=kwargs.get('action'),
+        key=kwargs.get('key'),
+        value=kwargs.get('value')
     )
-
 
 if __name__ == '__main__':
     cli()

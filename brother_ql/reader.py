@@ -4,6 +4,7 @@ import struct
 import io
 import logging
 import sys
+from brother_ql.models import ModelsManager
 
 from PIL import Image
 from PIL.ImageOps import colorize
@@ -29,7 +30,9 @@ OPCODES = {
     b'\x1b\x69\x4B':         ("expanded",        1, ""),
     b'\x1b\x69\x64':         ("margins",         2, ""),
     b'\x1b\x69\x55\x77\x01': ('amedia',        127, "Additional media information command"),
+    b'\x1b\x69\x55\x41':     ('auto_power_off',       -1, "Auto power off setting command"),
     b'\x1b\x69\x55\x4A':     ('jobid',          14, "Job ID setting command"),
+    b'\x1b\x69\x55\x70':     ('auto_power_on',       -1, "Auto power on setting command"),
     b'\x1b\x69\x58\x47':     ("request_config",  0, "Request transmission of .ini config file of printer"),
     b'\x1b\x69\x6B\x63':     ("number_of_copies",  2, "Internal specification commands"),
     b'\x1b\x69\x53':         ('status request',  0, "A status information request sent to the printer"),
@@ -66,9 +69,72 @@ RESP_MEDIA_TYPES = {
   0x00: 'No media',
   0x01: 'Laminated tape',
   0x03: 'Non-laminated type',
-  0x11: 'Heat-Shrink Tube',
+  0x11: 'Heat-Shrink Tube (HS 2:1)',
+  0x17: 'Heat-Shrink Tube (HS 3:1)',
   0x0A: 'Continuous length tape',
   0x0B: 'Die-cut labels',
+  0x4A: 'Continuous length tape',
+  0x4B: 'Die-cut labels',
+  0xFF: 'Incompatible tape',
+}
+
+RESP_MEDIA_CATEGORIES = {
+  0x00: 'No media',
+  0x01: 'TZe',
+  0x03: 'TZe',
+  0x11: 'TZe',
+  0x17: 'TZe',
+  0x0A: 'DK',
+  0x0B: 'DK',
+  0x4A: 'RD',
+  0x4B: 'RD',
+  0xFF: 'Incompatible',
+}
+
+RESP_TAPE_COLORS = {
+  0x01: 'White',
+  0x02: 'Other',
+  0x03: 'Clear',
+  0x04: 'Red',
+  0x05: 'Blue',
+  0x06: 'Yellow',
+  0x07: 'Green',
+  0x08: 'Black',
+  0x09: 'Clear(White text)',
+  0x20: 'Matte White',
+  0x21: 'Matte Clear',
+  0x22: 'Matte Silver',
+  0x23: 'Satin Gold',
+  0x24: 'Satin Silver',
+  0x30: 'Blue(D)',
+  0x31: 'Red(D)',
+  0x40: 'Fluorescent Orange',
+  0x41: 'Fluorescent Yellow',
+  0x50: 'Berry Pink(S)',
+  0x51: 'Light Gray(S)',
+  0x52: 'Lime Green(S)',
+  0x60: 'Yellow(F)',
+  0x61: 'Pink(F)',
+  0x62: 'Blue(F)',
+  0x70: 'White(Heat-shrink Tube)',
+  0x90: 'White(Flex. ID)',
+  0x91: 'Yellow(Flex. ID)',
+  0xF0: 'Clearning',
+  0xF1: 'Stencil',
+  0xFF: 'Incompatible',
+}
+
+RESP_TEXT_COLORS = {
+  0x01: 'White',
+  0x04: 'Red',
+  0x05: 'Blue',
+  0x08: 'Black',
+  0x0A: 'Gold',
+  0x62: 'Blue(F)',
+  0xF0: 'Cleaning',
+  0xF1: 'Stencil',
+  0x02: 'Other',
+  0xFF: 'Incompatible',
 }
 
 RESP_STATUS_TYPES = {
@@ -79,6 +145,7 @@ RESP_STATUS_TYPES = {
   0x04: 'Turned off',
   0x05: 'Notification',
   0x06: 'Phase change',
+  0xF0: 'Settings report',
 }
 
 RESP_PHASE_TYPES = {
@@ -87,24 +154,24 @@ RESP_PHASE_TYPES = {
 }
 
 RESP_BYTE_NAMES = [
-  'Print head mark',
-  'Size',
-  'Fixed (B=0x42)',
-  'Device dependent',
-  'Device dependent',
-  'Fixed (0=0x30)',
-  'Fixed (0x00 or 0=0x30)',
-  'Fixed (0x00)',
+  'Print head mark (0x80)',
+  'Size (0x20)',
+  'Brother code (B=0x42)',
+  'Series code',
+  'Model code',
+  'Country code',
+  'Power status',
+  'Reserved',
   'Error information 1',
   'Error information 2',
   'Media width',
   'Media type',
-  'Fixed (0x00)',
-  'Fixed (0x00)',
-  'Reserved',
+  'Number of colors',
+  'Media length (high)',
+  'Media sensor value',
   'Mode',
-  'Fixed (0x00)',
-  'Media length',
+  'Density',
+  'Media length (low)',
   'Status type',
   'Phase type',
   'Phase number (high)',
@@ -113,7 +180,12 @@ RESP_BYTE_NAMES = [
   'Expansion area',
   'Tape color information',
   'Text color information',
-  'Hardware settings',
+  'Hardware settings 1',
+  'Hardware settings 2',
+  'Hardware settings 3',
+  'Hardware settings 4',
+  'Requested setting',
+  'Reserved',
 ]
 
 def hex_format(data):
@@ -184,19 +256,29 @@ def interpret_response(data):
     media_width  = data[10]
     media_length = data[17]
 
-    media_type = data[11]
-    if media_type in RESP_MEDIA_TYPES:
-        media_type = RESP_MEDIA_TYPES[media_type]
+    media_code = data[11]
+    media_category = ""
+    if media_code in RESP_MEDIA_TYPES:
+        media_type = RESP_MEDIA_TYPES[media_code]
+        media_category = RESP_MEDIA_CATEGORIES[media_code]
         logger.debug("Media type: %s", media_type)
     else:
-        logger.error("Unknown media type %02X", media_type)
+        logger.error("Unknown media type %02X", media_code)
 
-    status_type = data[18]
-    if status_type in RESP_STATUS_TYPES:
-        status_type = RESP_STATUS_TYPES[status_type]
+    tape_color_code = data[24]
+    text_color_code = data[25]
+    tape_color = ''
+    text_color = ''
+    if media_category == 'TZe':
+        tape_color = RESP_TAPE_COLORS[tape_color_code]
+        text_color = RESP_TEXT_COLORS[text_color_code]
+
+    status_code = data[18]
+    if status_code in RESP_STATUS_TYPES:
+        status_type = RESP_STATUS_TYPES[status_code]
         logger.debug("Status type: %s", status_type)
     else:
-        logger.error("Unknown status type %02X", status_type)
+        logger.error("Unknown status type %02X", status_code)
 
     phase_type = data[19]
     if phase_type in RESP_PHASE_TYPES:
@@ -205,14 +287,33 @@ def interpret_response(data):
     else:
         logger.error("Unknown phase type %02X", phase_type)
 
+    # settings report
+    setting = None
+    if status_code == 0xF0:
+        logger.debug("Settings report detected")
+        setting = data[30]
+
+    # printer model detection
+    model = "Unknown"
+    for m in ModelsManager().iter_elements():
+        if series_code == m.series_code and model_code == m.model_code:
+            model = m.identifier
+            break
+
     response = {
       'series_code': series_code,
       'model_code': model_code,
+      'model': model,
       'status_type': status_type,
+      'status_code': status_code,
       'phase_type': phase_type,
       'media_type': media_type,
+      'media_category': media_category,
+      'tape_color': tape_color,
+      'text_color': text_color,
       'media_width': media_width,
       'media_length': media_length,
+      'setting': setting,
       'errors': errors,
     }
     return response
