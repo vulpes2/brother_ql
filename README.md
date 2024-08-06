@@ -73,15 +73,19 @@ pyusb (3) | USB | ✔ (3.1) | ✔ (3.2) | ✔ (3.3)
 Warning: when using one of the USB backends make sure the Editor Lite feature is turned off (if your model supports it), otherwise the USB Printer interface won't be detected.
 
 ## Significant Changes:
-v 1.3 (unreleased):
-- Added new cli command for getting status of printer https://github.com/matmair/brother_ql-inventree/pull/53
+v 1.3:
+- Added detection of more media and commands to list and configure settings https://github.com/matmair/brother_ql-inventree/pull/57
+- Added new cli command for getting the status of printers https://github.com/matmair/brother_ql-inventree/pull/53
+
 v1.2:
 - Remove support for Python 2 https://github.com/matmair/brother_ql-inventree/pull/43 / https://github.com/matmair/brother_ql-inventree/pull/45
 - Added support for PT-E550W https://github.com/matmair/brother_ql-inventree/pull/44
 - Added label support for 12+17 https://github.com/matmair/brother_ql-inventree/pull/42
+
 v1.1:
 - Support for Pillow 10.x https://github.com/matmair/brother_ql-inventree/pull/37
 v1.0:
+
 - Renamed the package to `brother_ql-inventree` and added a release action https://github.com/matmair/brother_ql-inventree/pull/16
 - Added printer support for QL-600 https://github.com/matmair/brother_ql-inventree/pull/17 , PT-P950NW https://github.com/matmair/brother_ql-inventree/pull/6 , QL-1100, L-1100NWB, QL-1115NWB https://github.com/matmair/brother_ql-inventree/pull/18
 - Added label support for DK-1234 https://github.com/matmair/brother_ql-inventree/pull/22 , 54x29  https://github.com/matmair/brother_ql-inventree/pull/19 , DK22246 https://github.com/matmair/brother_ql-inventree/pull/20, ...
