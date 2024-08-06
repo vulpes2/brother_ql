@@ -73,7 +73,8 @@ pyusb (3) | USB | ✔ (3.1) | ✔ (3.2) | ✔ (3.3)
 Warning: when using one of the USB backends make sure the Editor Lite feature is turned off (if your model supports it), otherwise the USB Printer interface won't be detected.
 
 ## Significant Changes:
-v 1.3 (unreleased):
+v 1.3:
+- Added detection of more media and commands to list and configure settings https://github.com/matmair/brother_ql-inventree/pull/57
 - Added new cli command for getting the status of printers https://github.com/matmair/brother_ql-inventree/pull/53
 
 v1.2:
