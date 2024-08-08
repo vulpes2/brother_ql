@@ -12,8 +12,12 @@ import time
 
 import usb.core
 import usb.util
+import logging
 
+logger = logging.getLogger(__name__)
 from .generic import BrotherQLBackendGeneric
+
+BROTHER_VID = 0x04f9
 
 def list_available_devices():
     """
@@ -39,17 +43,35 @@ def list_available_devices():
                     return True
             return False
 
-    # only Brother printers
-    printers = usb.core.find(find_all=1, custom_match=find_class(7), idVendor=0x04f9)
+    # get a list of Brother printers with the printer class
+    printers = usb.core.find(find_all=1, custom_match=find_class(usb.CLASS_PRINTER), idVendor=BROTHER_VID)
+    ums_printers = usb.core.find(find_all=1, custom_match=find_class(usb.CLASS_MASS_STORAGE), idVendor=BROTHER_VID)
+
+    def get_descriptor(dev, descriptor):
+        result = None
+        try:
+            result = usb.util.get_string(dev, descriptor)
+        except ValueError:
+            # Sometimes this is caused by a permission issue, but some printers (such as the QL-700 in ums mode)
+            # are not compliant with the USB spec and won't present a LANGID array. Hard-code US English and try again.
+            result = usb.util.get_string(dev, descriptor, langid=0x0409)
+        if result is None:
+            logger.warn("Cannot read device descriptor string, possible permission issue.")
+        return result
 
     def identifier(dev):
-        try:
-            serial = usb.util.get_string(dev, dev.iSerialNumber)
+        serial = get_descriptor(dev, dev.iSerialNumber)
+        if serial is None:
+            return 'usb://0x{:04x}:0x{:04x}'.format(dev.idVendor, dev.idProduct)
+        else:
             return "usb://0x{:04x}:0x{:04x}/{}".format(
                 dev.idVendor, dev.idProduct, serial
             )
-        except:
-            return 'usb://0x{:04x}:0x{:04x}'.format(dev.idVendor, dev.idProduct)
+
+    if ums_printers is not None:
+        for p in ums_printers:
+            logger.warn(f"Detected USB label printer in the unsupported P-Touch Editor Lite mode: {get_descriptor(p, p.iProduct)}")
+            logger.warn("Disable P-Touch Editor Lite mode by holding down the corresponding button on the printer until the light goes off.")
 
     return [{'identifier': identifier(printer), 'instance': printer} for printer in printers]
 
