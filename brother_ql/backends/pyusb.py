@@ -9,7 +9,7 @@ Install via `pip install pyusb`
 """
 
 import time
-
+import sys
 import usb.core
 import usb.util
 import logging
@@ -115,29 +115,35 @@ class BrotherQLBackendPyUSB(BrotherQLBackendGeneric):
 
         try:
             assert self.dev.is_kernel_driver_active(0)
+            logger.debug("Detaching kernel driver")
             self.dev.detach_kernel_driver(0)
             self.was_kernel_driver_active = True
         except (NotImplementedError, AssertionError):
             self.was_kernel_driver_active = False
 
-        # set the active configuration. With no arguments, the first configuration will be the active one
-        self.dev.set_configuration()
+        try:
+            # set the active configuration. With no arguments, the first configuration will be the active one
+            self.dev.set_configuration()
+            cfg = self.dev.get_active_configuration()
+            intf = usb.util.find_descriptor(cfg, bInterfaceClass=7)
+            assert intf is not None
 
-        cfg = self.dev.get_active_configuration()
-        intf = usb.util.find_descriptor(cfg, bInterfaceClass=7)
-        assert intf is not None
+            ep_match_in  = lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN
+            ep_match_out = lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT
 
-        ep_match_in  = lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN
-        ep_match_out = lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT
+            ep_in  = usb.util.find_descriptor(intf, custom_match=ep_match_in)
+            ep_out = usb.util.find_descriptor(intf, custom_match=ep_match_out)
 
-        ep_in  = usb.util.find_descriptor(intf, custom_match=ep_match_in)
-        ep_out = usb.util.find_descriptor(intf, custom_match=ep_match_out)
+            assert ep_in  is not None
+            assert ep_out is not None
 
-        assert ep_in  is not None
-        assert ep_out is not None
-
-        self.write_dev = ep_out
-        self.read_dev  = ep_in
+            self.write_dev = ep_out
+            self.read_dev  = ep_in
+        except (usb.core.USBError, AssertionError) as e:
+            # re-attach kernel driver and exit gracefully if libusb reports errors
+            logger.error(f"Cannot initialize device {device_specifier}: {e}")
+            self.dispose()
+            sys.exit(1)
 
     def _raw_read(self, length):
         # pyusb Device.read() operations return array() type - let's convert it to bytes()
@@ -175,5 +181,6 @@ class BrotherQLBackendPyUSB(BrotherQLBackendGeneric):
         usb.util.dispose_resources(self.dev)
         del self.write_dev, self.read_dev
         if self.was_kernel_driver_active:
+            logger.debug("Re-attaching kernel driver")
             self.dev.attach_kernel_driver(0)
         del self.dev
