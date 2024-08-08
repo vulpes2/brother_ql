@@ -19,9 +19,11 @@ from .generic import BrotherQLBackendGeneric
 
 BROTHER_VID = 0x04f9
 
-def list_available_devices():
+def list_available_devices(ums_warning=True):
     """
     List all available devices for the respective backend
+
+    :param bool ums_warning: enable warinings when printers in P-Touch Editor Lite are detected
 
     returns: devices: a list of dictionaries with the keys 'identifier' and 'instance': \
         [ {'identifier': 'usb://0x04f9:0x2015/C5Z315686', 'instance': pyusb.core.Device()}, ]
@@ -68,7 +70,7 @@ def list_available_devices():
                 dev.idVendor, dev.idProduct, serial
             )
 
-    if ums_printers is not None:
+    if ums_warning and ums_printers is not None:
         for p in ums_printers:
             logger.warn(f"Detected USB label printer in the unsupported P-Touch Editor Lite mode: {get_descriptor(p, p.iProduct)}")
             logger.warn("Disable P-Touch Editor Lite mode by holding down the corresponding button on the printer until the light goes off.")
@@ -97,7 +99,7 @@ class BrotherQLBackendPyUSB(BrotherQLBackendGeneric):
             vendor_product, _, serial = device_specifier.partition('/')
             vendor, _, product = vendor_product.partition(':')
             vendor, product = int(vendor, 16), int(product, 16)
-            for result in list_available_devices():
+            for result in list_available_devices(ums_warning=False):
                 printer = result['instance']
                 if printer.idVendor == vendor and printer.idProduct == product or (serial and printer.iSerialNumber == serial):
                     self.dev = printer
