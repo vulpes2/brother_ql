@@ -93,7 +93,7 @@ def list_available_devices(ums_warning=True):
             try:
                 model = re.search('^(?:usb-Brother_)((?:PT|QL)-[A-Z0-9]{2,5})(?:_[A-Z0-9]+-0:0-part1)$', path).group(1)
                 logger.warn(f"Detected a label printer {model} in the unsupported P-Touch Editor Lite mode.")
-            except AttributeError or IndexError:
+            except (AttributeError, IndexError):
                 logger.warn(f"Detected a label printer in the unsupported P-Touch Editor Lite mode at {path}")
             logger.warn("Disable P-Touch Editor Lite by holding down the corresponding button on the printer until the light goes off.")
 
