@@ -2,7 +2,7 @@
 
 import logging
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 import PIL.ImageOps, PIL.ImageChops
 
 from brother_ql.devicedependent import ENDLESS_LABEL, DIE_CUT_LABEL, ROUND_DIE_CUT_LABEL, PTOUCH_ENDLESS_LABEL
@@ -79,7 +79,7 @@ def convert(qlr, images, label,  **kwargs):
         else:
             try:
                 im = Image.open(image)
-            except (OSError, UnidentifiedImageError):
+            except OSError:
                 raise NotImplementedError("The image argument needs to be an Image() instance, the filename to an image, or a file handle.")
 
         if im.mode.endswith('A'):
