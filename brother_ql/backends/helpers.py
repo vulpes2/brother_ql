@@ -47,7 +47,7 @@ def send(instructions, printer_identifier=None, backend_identifier=None, blockin
     else:
         try:
             selected_backend = guess_backend(printer_identifier)
-        except:
+        except ValueError:
             logger.info("No backend stated. Selecting the default linux_kernel backend.")
             selected_backend = 'linux_kernel'
 

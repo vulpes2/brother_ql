@@ -54,7 +54,7 @@ def main():
     else:
         try:
             selected_backend = guess_backend(args.printer)
-        except:
+        except ValueError:
             logger.info("No backend stated. Selecting the default linux_kernel backend.")
             selected_backend = 'linux_kernel'
 

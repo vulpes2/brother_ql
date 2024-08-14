@@ -48,7 +48,7 @@ def list_available_devices():
             return "usb://0x{:04x}:0x{:04x}/{}".format(
                 dev.idVendor, dev.idProduct, serial
             )
-        except:
+        except (usb.core.USBError, Exception):
             return 'usb://0x{:04x}:0x{:04x}'.format(dev.idVendor, dev.idProduct)
 
     return [{'identifier': identifier(printer), 'instance': printer} for printer in printers]

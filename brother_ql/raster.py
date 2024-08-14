@@ -222,7 +222,7 @@ class BrotherQLRaster(object):
     def get_pixel_width(self):
         try:
             nbpr = number_bytes_per_row[self.model]
-        except:
+        except KeyError:
             nbpr = number_bytes_per_row['default']
         return nbpr*8
 

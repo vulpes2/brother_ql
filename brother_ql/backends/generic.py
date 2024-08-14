@@ -44,7 +44,7 @@ class BrotherQLBackendGeneric(object):
     def dispose(self):
         try:
             self._dispose()
-        except:
+        except Exception:
             pass
 
     def _dispose(self):
