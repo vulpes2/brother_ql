@@ -211,7 +211,12 @@ def status_cmd(ctx, *args, **kwargs):
     if len(result['errors']) != 0:
         print(f"Errors: {result['errors']}")
     print(f"Media type: [{result['media_category']}] {result['media_type']}")
-    if result['media_category'] == 'TZe':
+    if result['model'].startswith('QL') and result['media_sensor'] != 0x0:
+        color = 'Black on White'
+        if result['media_sensor'] == 0x23:
+            color = 'Red/Black on White'
+        print(f"Media color: {color}")
+    if result['model'].startswith('PT'):
         print("Note: tape color information may be incorrect for aftermarket tape cartridges.")
         print(f"Tape color: {result['tape_color']}")
         print(f"Text color: {result['text_color']}")
