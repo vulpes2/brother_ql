@@ -66,10 +66,12 @@ def list_available_devices(ums_warning=True):
             if info.get(c) is not None:
                 command_set = info.get(c)
 
-        if manufacturer == 'Brother' and command_set == 'PT-CBP':
+        logger.debug(f"Checking printer {info}")
+        if manufacturer == 'Brother' and 'PT-CBP' in command_set:
             logger.info(f"Compatible printer at {name}: {manufacturer} {model}")
         else:
             logger.info(f"Inompatible printer at {name}: {manufacturer} {model}")
+            logger.info(f"Command set: {command_set}")
             continue
 
         # check permissions
