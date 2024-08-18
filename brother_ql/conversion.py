@@ -79,7 +79,7 @@ def convert(qlr, images, label,  **kwargs):
         else:
             try:
                 im = Image.open(image)
-            except:
+            except OSError:
                 raise NotImplementedError("The image argument needs to be an Image() instance, the filename to an image, or a file handle.")
 
         if im.mode.endswith('A'):

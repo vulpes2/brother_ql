@@ -130,7 +130,7 @@ def env(ctx, *args, **kwargs):
     print("  * package version: ", pkg.version)
     try:
         cli_loc = shutil.which('brother_ql')
-    except:
+    except Exception:
         cli_loc = 'unknown'
     print("  * brother_ql CLI path:", cli_loc)
     # brother_ql's requirements

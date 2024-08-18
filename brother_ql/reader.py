@@ -213,7 +213,7 @@ def chunker(data, raise_exception=False):
         if len(data) == 0: break
         try:
             opcode = match_opcode(data)
-        except:
+        except KeyError:
             msg = 'unknown opcode starting with {}...)'.format(hex_format(data[0:4]))
             if raise_exception:
                 raise ValueError(msg)

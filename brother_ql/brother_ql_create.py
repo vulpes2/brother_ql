@@ -8,7 +8,7 @@ from brother_ql.devicedependent import label_type_specs
 
 try:
     stdout = sys.stdout.buffer
-except:
+except Exception:
     stdout = sys.stdout
 
 logger = logging.getLogger(__name__)
