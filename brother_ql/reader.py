@@ -69,7 +69,11 @@ RESP_MEDIA_TYPES = {
   0x00: 'No media',
   0x01: 'Laminated tape',
   0x03: 'Non-laminated type',
+  0x04: 'Fabric tape',
   0x11: 'Heat-Shrink Tube (HS 2:1)',
+  0x13: 'Fle tape',
+  0x14: 'Flexible ID tape',
+  0x15: 'Satin tape',
   0x17: 'Heat-Shrink Tube (HS 3:1)',
   0x0A: 'Continuous length tape',
   0x0B: 'Die-cut labels',
@@ -80,14 +84,18 @@ RESP_MEDIA_TYPES = {
 
 RESP_MEDIA_CATEGORIES = {
   0x00: 'No media',
-  0x01: 'TZe',
-  0x03: 'TZe',
-  0x11: 'TZe',
-  0x17: 'TZe',
+  0x01: 'TZe', # probably also HGe (high grade)
+  0x03: 'TZe', # probably also STe (stencil)
+  0x04: 'TZe',
+  0x11: 'HSe',
+  0x13: 'Fle',
+  0x14: 'TZe',
+  0x15: 'TZe',
+  0x17: 'HSe',
   0x0A: 'DK',
   0x0B: 'DK',
-  0x4A: 'RD',
-  0x4B: 'RD',
+  0x4A: 'DK', # RD for TD series
+  0x4B: 'DK', # RD for TD series
   0xFF: 'Incompatible',
 }
 
@@ -119,7 +127,7 @@ RESP_TAPE_COLORS = {
   0x70: 'White(Heat-shrink Tube)',
   0x90: 'White(Flex. ID)',
   0x91: 'Yellow(Flex. ID)',
-  0xF0: 'Clearning',
+  0xF0: 'Cleaning',
   0xF1: 'Stencil',
   0xFF: 'Incompatible',
 }
@@ -241,6 +249,14 @@ def interpret_response(data):
         logger.debug('Byte %2d %24s %02X', i, byte_name+':', data[i])
     series_code = data[3]
     model_code = data[4]
+
+    # printer model detection
+    model = "Unknown"
+    for m in ModelsManager().iter_elements():
+        if series_code == m.series_code and model_code == m.model_code:
+            model = m.identifier
+            break
+
     errors = []
     error_info_1 = data[8]
     error_info_2 = data[9]
@@ -257,6 +273,7 @@ def interpret_response(data):
     media_length = data[17]
 
     media_code = data[11]
+    media_sensor = data[14]
     media_category = ""
     if media_code in RESP_MEDIA_TYPES:
         media_type = RESP_MEDIA_TYPES[media_code]
@@ -269,7 +286,7 @@ def interpret_response(data):
     text_color_code = data[25]
     tape_color = ''
     text_color = ''
-    if media_category == 'TZe':
+    if model.startswith('PT'):
         tape_color = RESP_TAPE_COLORS[tape_color_code]
         text_color = RESP_TEXT_COLORS[text_color_code]
 
@@ -293,13 +310,6 @@ def interpret_response(data):
         logger.debug("Settings report detected")
         setting = data[30]
 
-    # printer model detection
-    model = "Unknown"
-    for m in ModelsManager().iter_elements():
-        if series_code == m.series_code and model_code == m.model_code:
-            model = m.identifier
-            break
-
     response = {
       'series_code': series_code,
       'model_code': model_code,
@@ -309,6 +319,7 @@ def interpret_response(data):
       'phase_type': phase_type,
       'media_type': media_type,
       'media_category': media_category,
+      'media_sensor': media_sensor,
       'tape_color': tape_color,
       'text_color': text_color,
       'media_width': media_width,
