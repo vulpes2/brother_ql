@@ -74,6 +74,7 @@ def convert(qlr, images, label,  **kwargs):
         pass
 
     for i, image in enumerate(images):
+        logger.info(f"Rasterizing page {qlr.page_number + 1} of {len(images)}")
         if isinstance(image, Image.Image):
             im = image
         else:
@@ -194,4 +195,6 @@ def convert(qlr, images, label,  **kwargs):
         else:
             qlr.add_print(last_page=False)
 
+        # increment page number
+        qlr.page_number += 1
     return qlr.data
