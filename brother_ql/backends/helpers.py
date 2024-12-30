@@ -11,6 +11,7 @@ import logging, time
 
 from brother_ql.backends import backend_factory, guess_backend
 from brother_ql.reader import interpret_response
+from brother_ql.backends import BrotherQLBackendGeneric
 
 logger = logging.getLogger(__name__)
 
@@ -159,9 +160,9 @@ def get_status(
 
 
 def get_setting(
-    printer,
-    setting,
-    payload=None
+    printer: BrotherQLBackendGeneric,
+    setting: int,
+    payload: bytes = None,
 ):
     """
     Get setting from printer.
@@ -180,7 +181,7 @@ def get_setting(
     # u8 setting
     # 0x01 read
     # optional extra payload
-    command = b"\x1b\x69\x55" + setting.to_bytes(1) + b"\x01"
+    command = b"\x1b\x69\x55" + setting.to_bytes(1, "big") + b"\x01"
     if payload is not None:
         command += payload
     printer.write(command)
@@ -189,9 +190,9 @@ def get_setting(
 
 
 def write_setting(
-    printer,
-    setting,
-    payload,
+    printer: BrotherQLBackendGeneric,
+    setting: int,
+    payload: bytes,
 ):
     """
     Write setting to printer.
@@ -208,7 +209,7 @@ def write_setting(
     # u8 setting
     # 0x0 write
     # payload (size dependent on setting and machine series)
-    command = b"\x1b\x69\x55" + setting.to_bytes(1) + b"\x00"
+    command = b"\x1b\x69\x55" + setting.to_bytes(1, 'big') + b"\x00"
     command += payload
     printer.write(command)
     # retrieve status to make sure no errors occured
@@ -249,7 +250,7 @@ def configure(
 
     if action == 'set':
         if key == 'auto-power-on':
-            payload = value.to_bytes(1)
+            payload = value.to_bytes(1, "big")
             write_setting(printer, 0x70, payload)
             get_status(printer, 0x0)
         elif key == 'power-off-delay':
@@ -257,7 +258,7 @@ def configure(
             # 0x30 series needs an extra byte here
             if series_code == 0x30:
                 payload += b"\x00"
-            payload += value.to_bytes(1)
+            payload += value.to_bytes(1, "big")
             write_setting(printer, 0x41, payload)
             get_status(printer, 0x0)
         else:
