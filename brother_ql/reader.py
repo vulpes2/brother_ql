@@ -100,6 +100,7 @@ RESP_MEDIA_CATEGORIES = {
 }
 
 RESP_TAPE_COLORS = {
+  0x00: 'No Media',
   0x01: 'White',
   0x02: 'Other',
   0x03: 'Clear',
@@ -133,6 +134,7 @@ RESP_TAPE_COLORS = {
 }
 
 RESP_TEXT_COLORS = {
+  0x00: 'No Media',
   0x01: 'White',
   0x04: 'Red',
   0x05: 'Blue',
@@ -297,12 +299,13 @@ def interpret_response(data):
     else:
         logger.error("Unknown status type %02X", status_code)
 
-    phase_type = data[19]
-    if phase_type in RESP_PHASE_TYPES:
-        phase_type = RESP_PHASE_TYPES[phase_type]
+    phase_code = data[19]
+    phase_type = ''
+    if phase_code in RESP_PHASE_TYPES:
+        phase_type = RESP_PHASE_TYPES[phase_code]
         logger.debug("Phase type: %s", phase_type)
     else:
-        logger.error("Unknown phase type %02X", phase_type)
+        logger.error("Unknown phase type %02X", phase_code)
 
     # settings report
     setting = None
@@ -317,6 +320,7 @@ def interpret_response(data):
       'status_type': status_type,
       'status_code': status_code,
       'phase_type': phase_type,
+      'phase_code': phase_code,
       'media_type': media_type,
       'media_category': media_category,
       'media_sensor': media_sensor,

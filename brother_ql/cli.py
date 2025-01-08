@@ -158,6 +158,7 @@ def env(ctx, *args, **kwargs):
 @click.option('--600dpi', 'dpi_600', is_flag=True, help='Print with 600x300 dpi available on some models. Provide your image as 600x600 dpi; perpendicular to the feeding the image will be resized to 300dpi.')
 @click.option('--lq', is_flag=True, help='Print with low quality (faster). Default is high quality.')
 @click.option('--no-cut', is_flag=True, help="Don't cut the tape after printing the label.")
+@click.option('-q', '--queue', is_flag=True, help='Enable print queue support.')
 @click.pass_context
 def print_cmd(ctx, *args, **kwargs):
     """ Print a label of the provided IMAGE. """
@@ -165,14 +166,24 @@ def print_cmd(ctx, *args, **kwargs):
     model = ctx.meta.get('MODEL')
     printer = ctx.meta.get('PRINTER')
     from brother_ql.conversion import convert
-    from brother_ql.backends.helpers import send
+    from brother_ql.backends.helpers import send, get_printer
     from brother_ql.raster import BrotherQLRaster
+    from brother_ql.print_queue import BrotherPrintQueue
     qlr = BrotherQLRaster(model)
     qlr.exception_on_warning = True
     kwargs['cut'] = not kwargs['no_cut']
     del kwargs['no_cut']
-    instructions = convert(qlr=qlr, **kwargs)
-    send(instructions=instructions, printer_identifier=printer, backend_identifier=backend, blocking=True)
+    use_print_queue = kwargs.get('queue', False)
+    if use_print_queue:
+        # Print Queue with error handlers
+        printer_instance = get_printer(printer_identifier=printer, backend_identifier=backend)
+        queue = BrotherPrintQueue(printer_instance, qlr)
+        queue.queue_image(**kwargs)
+        queue.submit()
+    else: 
+        # Legacy print method without error handling
+        instructions = convert(qlr=qlr, **kwargs)
+        send(instructions=instructions, printer_identifier=printer, backend_identifier=backend, blocking=True)
 
 @cli.command(name='analyze', help='interpret a binary file containing raster instructions for the Brother QL-Series printers')
 @click.argument('instructions', type=click.File('rb'))

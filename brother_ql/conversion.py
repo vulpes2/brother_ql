@@ -9,12 +9,13 @@ from brother_ql.devicedependent import ENDLESS_LABEL, DIE_CUT_LABEL, ROUND_DIE_C
 from brother_ql.devicedependent import label_type_specs, right_margin_addition
 from brother_ql import BrotherQLUnsupportedCmd
 from brother_ql.image_trafos import filtered_hsv
+from brother_ql.raster import BrotherQLRaster
 
 logger = logging.getLogger(__name__)
 
 logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
 
-def convert(qlr, images, label,  **kwargs):
+def _rasterize_images(qlr: BrotherQLRaster, images, label, queue: bool = False, **kwargs):
     r"""Converts one or more images to a raster instruction file.
 
     :param qlr:
@@ -66,13 +67,9 @@ def convert(qlr, images, label,  **kwargs):
         qlr.add_switch_mode()
     except BrotherQLUnsupportedCmd:
         pass
-    qlr.add_invalidate()
-    qlr.add_initialize()
-    try:
-        qlr.add_switch_mode()
-    except BrotherQLUnsupportedCmd:
-        pass
 
+    page_data = []
+    logger.info(f"Rasterizing {len(images)} pages")
     for i, image in enumerate(images):
         if isinstance(image, Image.Image):
             im = image
@@ -107,7 +104,7 @@ def convert(qlr, images, label,  **kwargs):
             if im.size[0] != dots_printable[0]:
                 hsize = int((dots_printable[0] / im.size[0]) * im.size[1])
                 im = im.resize((dots_printable[0], hsize), Image.LANCZOS)
-                logger.warning('Need to resize the image...')
+                logger.debug('Need to resize the image...')
             if im.size[0] < device_pixel_width:
                 new_im = Image.new(im.mode, (device_pixel_width, im.size[1]), (255,)*len(im.mode))
                 new_im.paste(im, (device_pixel_width-im.size[0]-right_margin_dots, 0))
@@ -152,7 +149,6 @@ def convert(qlr, images, label,  **kwargs):
             else:
                 im = im.point(lambda x: 0 if x < threshold else 255, mode="1")
 
-        qlr.add_status_information()
         tape_size = label_specs['tape_size']
         if label_specs['kind'] in (DIE_CUT_LABEL, ROUND_DIE_CUT_LABEL):
             qlr.mtype = 0x0B
@@ -194,4 +190,34 @@ def convert(qlr, images, label,  **kwargs):
         else:
             qlr.add_print(last_page=False)
 
-    return qlr.data
+        # increment page number
+        qlr.page_number += 1
+
+        # add raster data to page data list and clear it
+        page_data.append(qlr.data)
+        qlr.clear()
+
+    if queue:
+        return page_data
+    else:
+        # return a single bytes object for legacy conversion method 
+        data = b''.join(page_data)
+        return data
+
+def convert(qlr: BrotherQLRaster, images, label, **kwargs):
+    # Legacy method with no queue support, returns a single bytes object
+    qlr.add_invalidate()
+    qlr.add_initialize()
+    qlr.add_status_information()
+    setup_data = qlr.data
+    qlr.clear()
+
+    page_data = _rasterize_images(qlr, images, label, **kwargs)
+    return setup_data + page_data
+
+def queue_convert(qlr: BrotherQLRaster, images, label, **kwargs):
+    # Queue conversion method, init handled by the print queue class
+    # Returns a list of bytes
+    kwargs['queue'] = True
+    page_data = _rasterize_images(qlr, images, label, **kwargs)
+    return page_data
