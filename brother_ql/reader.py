@@ -469,7 +469,7 @@ class BrotherQLReader(object):
                                         pixdata_black[x, y] = (255, 255, 255, 0)
                             im_red.paste(im_black, (0, 0), im_black)
                             im = im_red
-                        im = im.transpose(Image.FLIP_LEFT_RIGHT)
+                        im = im.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
                         img_name = self.filename_fmt.format(counter=self.page_counter)
                         im.save(img_name)
                         print('Page saved as {}'.format(img_name))
